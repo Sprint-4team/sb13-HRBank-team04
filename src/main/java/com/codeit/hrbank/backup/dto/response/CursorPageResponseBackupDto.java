@@ -10,9 +10,9 @@ public record CursorPageResponseBackupDto(
         Long totalElements,
         boolean hasNext
 ) {
-    public static CursorPageResponseBackupDto from() {
-        return new CursorPageResponseBackupDto(
-
-        );
-    }
+//    public static CursorPageResponseBackupDto from() {
+//        return new CursorPageResponseBackupDto(
+//
+//        );
+//    }
 }

@@ -10,8 +10,8 @@ public record BackupDto(
         String worker,
         Instant startedAt,
         Instant endedAt,
-        BackupStatus status,
-        Long fileId
+        BackupStatus status
+//        Long fileId
 ) {
     public static BackupDto from(BackupHistory history) {
         return new BackupDto(
@@ -19,8 +19,8 @@ public record BackupDto(
                 history.getWorker(),
                 history.getStartedAt(),
                 history.getEndedAt(),
-                history.getStatus(),
-                history.getFile().getId()
+                history.getStatus()
+//                history.getFile().getId()
         );
     }
 }

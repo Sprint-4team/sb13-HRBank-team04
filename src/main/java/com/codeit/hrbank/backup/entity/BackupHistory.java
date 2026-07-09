@@ -11,7 +11,7 @@ import java.time.Instant;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "backup_histories")
+//@Table(name = "backup_histories")
 public class BackupHistory {
 
     @Id
@@ -35,9 +35,9 @@ public class BackupHistory {
     @Column(nullable = false)
     private BackupStatus status;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "file_id")
-    private 파일엔티티 file;
+//    @OneToOne(fetch = FetchType.LAZY)
+//    @JoinColumn(name = "file_id")
+//    private 파일엔티티 file;
 
     private BackupHistory(String worker, BackupStatus status) {
         Instant now = Instant.now();
@@ -59,18 +59,18 @@ public class BackupHistory {
         return new BackupHistory(worker, BackupStatus.IN_PROGRESS);
     }
 
-    public void complete(Instant endedAt, 파일엔티티 file) {
+    public void complete(Instant endedAt) {
         this.updatedAt = Instant.now();
         this.endedAt = endedAt;
         this.status = BackupStatus.COMPLETED;
-        this.file = file;
+//        this.file = file;
     }
 
-    public void fail(Instant endedAt, 파일엔티티 file) {
+    public void fail(Instant endedAt) {
         this.updatedAt = Instant.now();
         this.endedAt = endedAt;
         this.status = BackupStatus.FAILED;
-        this.file = file;
+//        this.file = file;
     }
 
 }

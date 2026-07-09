@@ -36,7 +36,7 @@ public class BackupHistoryService {
     }
 
     @Transactional
-    public CursorPageResponseBackupDto findBackupHistories(BackupSearchCondition condition) {
+    public void findBackupHistories(BackupSearchCondition condition) {
 
 
     }
