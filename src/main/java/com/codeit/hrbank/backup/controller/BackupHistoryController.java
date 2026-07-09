@@ -30,7 +30,7 @@ public class BackupHistoryController {
     }
 
     @GetMapping
-    public ResponseEntity<CursorPageResponseBackupDto> findBackupHistories(
+    public void findBackupHistories(
             @RequestParam(required = false) String worker,
             @RequestParam(required = false) BackupStatus status,
             @RequestParam(required = false) Instant startedAtFrom,
@@ -44,9 +44,9 @@ public class BackupHistoryController {
         BackupSearchCondition condition = new BackupSearchCondition(
                 worker, status, startedAtFrom, startedAtTo, idAfter, cursor, size, sortField, sortDirection);
 
-        CursorPageResponseBackupDto backupHistories = backupHistoryService.findBackupHistories(condition);
-
-        return ResponseEntity.ok(backupHistories);
+//        CursorPageResponseBackupDto backupHistories = backupHistoryService.findBackupHistories(condition);
+//
+//        return ResponseEntity.ok(backupHistories);
     }
 
     @GetMapping("/latest")
