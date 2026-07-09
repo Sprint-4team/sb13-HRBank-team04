@@ -6,12 +6,16 @@ import com.codeit.hrbank.backup.dto.response.CursorPageResponseBackupDto;
 import com.codeit.hrbank.backup.service.BackupHistoryService;
 import com.codeit.hrbank.backup.type.BackupStatus;
 import jakarta.servlet.http.HttpServletRequest;
+import java.time.Instant;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import java.time.Instant;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
@@ -30,11 +34,13 @@ public class BackupHistoryController {
     }
 
     @GetMapping
-    public void findBackupHistories(
+    public ResponseEntity<CursorPageResponseBackupDto> findBackupHistories(
             @RequestParam(required = false) String worker,
             @RequestParam(required = false) BackupStatus status,
-            @RequestParam(required = false) Instant startedAtFrom,
-            @RequestParam(required = false) Instant startedAtTo,
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant startedAtFrom,
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant startedAtTo,
             @RequestParam(required = false) Long idAfter,
             @RequestParam(required = false) String cursor,
             @RequestParam(defaultValue = "10") int size,
@@ -44,9 +50,9 @@ public class BackupHistoryController {
         BackupSearchCondition condition = new BackupSearchCondition(
                 worker, status, startedAtFrom, startedAtTo, idAfter, cursor, size, sortField, sortDirection);
 
-//        CursorPageResponseBackupDto backupHistories = backupHistoryService.findBackupHistories(condition);
-//
-//        return ResponseEntity.ok(backupHistories);
+        backupHistoryService.findBackupHistories(condition);
+
+        return ResponseEntity.ok(null);
     }
 
     @GetMapping("/latest")
