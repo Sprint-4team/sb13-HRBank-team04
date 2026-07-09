@@ -1,5 +1,6 @@
 package com.codeit.hrbank.department;
 
+import com.codeit.hrbank.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -9,10 +10,10 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "department")
+@Table(name = "departments")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Department {
+public class Department extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -21,7 +22,7 @@ public class Department {
     @Column(name = "name", nullable = false, unique = true, length = 100)
     private String name;
 
-    @Column(name = "description", length = 500)
+    @Column(name = "description", nullable = false, length = 500)
     private String description;
 
     @Column(name = "established_date", nullable = false)
