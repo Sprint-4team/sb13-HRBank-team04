@@ -1,3 +1,33 @@
 spring:
   application:
     name: HR-bank
+  datasource:
+    url: jdbc:postgresql://localhost:5432/hrbank
+    username: hrbank_user
+    password: hrbank1234
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create
+    properties:
+      hibernate:
+        format_sql: true
+        highlight_sql: true
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html       # Swagger UI 접근 경로
+    operations-sorter: method    # HTTP 메서드 순으로 정렬
+    tags-sorter: alpha           # 태그 알파벳 순 정렬
+    display-request-duration: true
+  api-docs:
+    path: /v3/api-docs           # OpenAPI 스펙(JSON) 경로
+
+servlet:
+  multipart:
+    enabled: true
+    max-file-size: 5MB
+    max-request-size: 20MB
+
+server:
+  port: 8080
