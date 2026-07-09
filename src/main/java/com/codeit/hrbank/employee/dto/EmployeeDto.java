@@ -1,0 +1,31 @@
+package com.codeit.hrbank.employee.dto;
+
+import com.codeit.hrbank.employee.entity.Employee;
+import com.codeit.hrbank.employee.enums.EmployeeStatus;
+import java.time.LocalDate;
+
+public record EmployeeDto(
+    Long id,
+    String name,
+    String email,
+    String employeeNumber,
+    Long departmentId,
+    String position,
+    LocalDate hireDate,
+    EmployeeStatus status,
+    Long profileImageId
+) {
+  public static EmployeeDto from(Employee employee){
+    return new EmployeeDto(
+        employee.getId(),
+        employee.getName(),
+        employee.getEmail(),
+        employee.getEmployeeNumber(),
+        employee.getDepartmentId(),
+        employee.getPosition(),
+        employee.getHireDate(),
+        employee.getStatus(),
+        employee.getProfileImageId());
+  }
+
+}
