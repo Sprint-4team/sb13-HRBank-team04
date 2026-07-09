@@ -50,7 +50,7 @@ public class BackupHistoryController {
     }
 
     @GetMapping("/latest")
-    public ResponseEntity<BackupDto> findLatestBackupHistory(@RequestParam BackupStatus status) {
+    public ResponseEntity<BackupDto> findLatestBackupHistory(@RequestParam(defaultValue = "COMPLETED") BackupStatus status) {
         BackupDto backupDto = backupHistoryService.findLatestBackupHistory(status);
 
         return ResponseEntity.ok(backupDto);
