@@ -1,0 +1,83 @@
+@import "tailwindcss";
+@import "./theme.css";
+
+@plugin "tailwindcss-animate";
+@plugin "tailwindcss-react-aria-components";
+
+@utility scrollbar-hide {
+  /* For Webkit-based browsers (Chrome, Safari and Opera) */
+  &::-webkit-scrollbar {
+    display: none;
+    -webkit-appearance: none;
+  }
+
+  /* For IE, Edge and Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+@utility transition-inherit-all {
+  transition-property: inherit;
+  transition-duration: inherit;
+  transition-timing-function: inherit;
+}
+
+:root {
+  font-family: var(--font-body);
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: light dark;
+  color: #414651;
+  background-color: #ffffff;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  box-sizing: border-box;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+/* 공통 커스텀 스크롤바 */
+.scrollbar-thin {
+  /* Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: rgb(217, 217, 217) transparent;
+}
+
+/* Chrome, Edge, Safari */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent; /* 배경 투명 */
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: rgb(217, 217, 217); /* thumb 색 */
+  border-radius: 9999px;
+  border: 2px solid transparent; /* 살짝 얇게 보이게 */
+}
+
+/* 위/아래 화살표 버튼 제거 */
+.scrollbar-thin::-webkit-scrollbar-button {
+  display: none;
+}
+
+/* 차트의 포커스 아웃라인을 강제로 제거하는 스타일 */
+.custom-chart-focus-fix svg:focus {
+  outline: none !important; /* 브라우저 기본 포커스 아웃라인 제거 */
+  box-shadow: none !important; /* Tailwind ring/shadow 제거 */
+}
+
+/* 추가적으로, SVG 내부의 path, g 요소에 아웃라인이 생길 수도 있어 함께 제거합니다. */
+.custom-chart-focus-fix svg * {
+  outline: none !important;
+}
