@@ -35,9 +35,8 @@ public class BackupHistory {
     @Column(nullable = false)
     private BackupStatus status;
 
-//    @OneToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name = "file_id")
-//    private 파일엔티티 file;
+    @Column(name = "file_id")
+    private Long fileId;
 
     private BackupHistory(String worker, BackupStatus status) {
         Instant now = Instant.now();
