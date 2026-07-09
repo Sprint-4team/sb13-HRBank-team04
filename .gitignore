@@ -44,3 +44,6 @@ frontend/dist/
 .codex/
 .claude/
 CLAUDE.md
+
+### 로컬 전용 설정 (개인별 설정, Git에 올리지 않음) ###
+application-local.yml
