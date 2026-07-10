@@ -8,6 +8,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -41,6 +42,12 @@ public class EmployeeController {
       @Valid @RequestBody EmployeeUpdateRequest request){
     EmployeeDto update = employeeService.update(id, request);
     return ResponseEntity.status(HttpStatus.OK).body(update);
+  }
+
+  @DeleteMapping("/{id}")
+  public ResponseEntity<Void> delete(@PathVariable Long id){
+    employeeService.delete(id);
+    return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
   }
 
 }

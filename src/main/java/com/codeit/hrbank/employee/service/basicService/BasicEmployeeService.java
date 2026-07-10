@@ -88,6 +88,24 @@ public class BasicEmployeeService implements EmployeeService {
     return EmployeeDto.from(employee);
   }
 
+
+  @Override
+  @Transactional
+  public void delete(Long id) {
+    log.info("직원정보 삭제 요청 id = {}", id);
+
+    employeeRepository.findById(id)
+        .orElseThrow(() -> new NoSuchElementException("해당 id의 직원을 찾지 못 헀습니다." + id));
+
+    // TODO: 프로필 이미지 삭제 (profileImageId를 파일 파트에 전달) - 7/11 연동
+    // TODO: 삭제 이력(DELETED) 기록 - 이력 연동 시
+
+
+    employeeRepository.deleteById(id);
+
+    log.info("직원정보 삭제 완료 id = {}", id);
+  }
+
 //--헬퍼--
   private String generateEmployeeNumber(LocalDate hireDate) {
 
