@@ -1,7 +1,8 @@
 package com.codeit.hrbank.changelog.dto;
 
 import com.codeit.hrbank.changelog.EmployeeChangeType;
-import java.time.LocalDateTime;
+
+import java.time.Instant;
 import java.util.List;
 
 public record ChangeLogDetailDto(
@@ -10,7 +11,7 @@ public record ChangeLogDetailDto(
         String employeeNumber,
         String memo,
         String ipAddress,
-        LocalDateTime at,
+        Instant at,
         String employeeName,
         Long profileImageId,
         List<DiffDto> diffs

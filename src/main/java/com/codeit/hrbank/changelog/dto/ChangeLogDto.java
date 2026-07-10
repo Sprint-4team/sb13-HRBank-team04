@@ -1,6 +1,8 @@
 package com.codeit.hrbank.changelog.dto;
 
-import com.codeit.hrbank.changelog.EmployeeChangeType;import java.time.LocalDateTime;
+import com.codeit.hrbank.changelog.EmployeeChangeType;
+
+import java.time.Instant;
 
 public record ChangeLogDto(
         Long id,
@@ -8,6 +10,6 @@ public record ChangeLogDto(
         String employeeNumber,
         String memo,
         String ipAddress,
-        LocalDateTime at
+        Instant at
 ) {
 }
