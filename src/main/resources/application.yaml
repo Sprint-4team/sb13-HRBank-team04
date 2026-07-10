@@ -31,3 +31,6 @@ servlet:
 
 server:
   port: 8080
+
+file:
+  upload-dir: uploads
