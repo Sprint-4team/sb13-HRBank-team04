@@ -23,6 +23,7 @@ public class BasicEmployeeService implements EmployeeService {
 
 
   @Override
+  @Transactional
   public EmployeeDto createEmployee(EmployeeCreateRequest request) {
     log.info("직원 생성 요청: email = {}", request.email());
 
@@ -52,6 +53,7 @@ public class BasicEmployeeService implements EmployeeService {
 
 
   @Override
+  @Transactional(readOnly = true)
   public EmployeeDto findEmployee(Long id) {
     log.info("직원 단건 조회 요청: id = {}", id);
 
