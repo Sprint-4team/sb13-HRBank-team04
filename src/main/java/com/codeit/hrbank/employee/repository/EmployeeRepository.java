@@ -8,6 +8,8 @@ import org.springframework.data.repository.query.Param;
 public interface EmployeeRepository extends JpaRepository<Employee, Long> {
   boolean existsByEmail(String email);
 
+  long countByDepartmentId(Long departmentId);
+
   @Query("SELECT e.employeeNumber FROM Employee e " +
       "WHERE e.employeeNumber LIKE CONCAT(:prefix, '%') " +
       "ORDER BY e.employeeNumber DESC LIMIT 1")
