@@ -19,7 +19,7 @@ public class BasicEmployeeService implements EmployeeService {
 
   @Override
   public EmployeeDto createEmployee(EmployeeCreateRequest request) {
-    if(employeeRepository.existsByEmail(request.email())){
+    if (employeeRepository.existsByEmail(request.email())) {
       throw new RuntimeException("이미 존재하는 Email입니다." + request.email());
       //예외는 추후 커스텀을 고려해보겠습니다.
     }
@@ -39,18 +39,27 @@ public class BasicEmployeeService implements EmployeeService {
 
     Employee saved = employeeRepository.save(employee);
 
-     return EmployeeDto.from(saved);
+    return EmployeeDto.from(saved);
   }
 
 
-  private String generateEmployeeNumber(LocalDate hireDate){
+  @Override
+  public EmployeeDto findEmployee(Long id) {
+    Employee employee = employeeRepository.findById(id).orElseThrow(
+        ()
+            -> new RuntimeException("직원을 찾을 수 없습니다." + id));
+    return EmployeeDto.from(employee);
+  }
+
+
+  private String generateEmployeeNumber(LocalDate hireDate) {
     int year = hireDate.getYear();
     String prefix = String.valueOf(year);
     String latestEmployeeNumber = employeeRepository.findLatestEmployeeNumber(prefix);
-    if(latestEmployeeNumber == null){
+    if (latestEmployeeNumber == null) {
       return prefix + "0001";
     }
-    int nextSequence = Integer.parseInt(latestEmployeeNumber.substring(4))+1;
+    int nextSequence = Integer.parseInt(latestEmployeeNumber.substring(4)) + 1;
     return prefix + String.format("%04d", nextSequence);
 
   }

@@ -9,8 +9,8 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -35,11 +35,11 @@ public class Employee {
 
   @Column(name = "created_at", nullable = false, updatable = false)
   @CreatedDate
-  private LocalDateTime createdAt;
+  private Instant createdAt;
 
   @Column(name = "updated_at")
   @LastModifiedDate
-  private LocalDateTime updatedAt;
+  private Instant updatedAt;
 
   @Column(name = "name", nullable = false, length = 100)
   private String name;

@@ -4,6 +4,8 @@ import com.codeit.hrbank.employee.dto.EmployeeDto;
 import com.codeit.hrbank.employee.dto.request.EmployeeCreateRequest;
 
 public interface EmployeeService {
+
   EmployeeDto createEmployee(EmployeeCreateRequest employeeCreateRequest);
 
+  EmployeeDto findEmployee(Long id);
 }
