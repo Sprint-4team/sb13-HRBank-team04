@@ -27,7 +27,7 @@ public class EmployeeChangeLog {
     @Column(nullable = false)
     private EmployeeChangeType type;
 
-    @Column(name = "employee_id", nullable = false)
+    @Column(name = "employee_id")
     private Long employeeId;
     /*
     나중에 Employee Entity가 생기면
