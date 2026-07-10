@@ -67,4 +67,15 @@ public class Employee {
   private Long profileImageId;
 
 
+  public void update(String name, String email, Long departmentId,
+      String position, LocalDate hireDate, EmployeeStatus status) {
+    this.name = name;
+    this.email = email;
+    this.departmentId = departmentId;
+    this.position = position;
+    this.hireDate = hireDate;
+    this.status = status;
+    //this.profileImageId 7월 11일 진희님과 맞출 예정
+  }
+
 }
