@@ -23,25 +23,25 @@ public class File {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY) // 숫자 자동 증가
-  private Long id;
+  private Long id; // profileImageId
 
   @CreatedDate
-  @Column(nullable = false, updatable = false)
+  @Column(name = "created_at", nullable = false, updatable = false)
   Instant createdAt;
 
-  @Column(nullable = false, length = 255)
+  @Column(name = "original_file_name", nullable = false, length = 255)
   private String originalFileName;
 
-  @Column(nullable = false, length = 255)
+  @Column(name = "stored_file_name", nullable = false, length = 255)
   private String storedFileName;
 
-  @Column(nullable = false, length = 100)
+  @Column(name = "content_type", nullable = false, length = 100)
   private String contentType;
 
-  @Column(nullable = false)
+  @Column(name = "size", nullable = false)
   private Long size;
 
-  @Column(nullable = false, length = 500)
+  @Column(name = "path", nullable = false, length = 500)
   private String path;
 
   public File(String originalFileName, String storedFileName,
