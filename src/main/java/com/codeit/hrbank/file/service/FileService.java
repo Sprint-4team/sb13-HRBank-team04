@@ -87,6 +87,7 @@ public class FileService {
     Path requested = Paths.get(file.getPath()).normalize(); // DB -> path -> 파일 접근
     if (!requested.startsWith(uploadPath)){
       log.warn("다운로드 요청 거부");
+      throw new IllegalArgumentException("파일 경로가 유효하지 않음"); // 실패 시 예외를 던지도록 수정
     }
     if (!Files.exists(requested) || Files.isDirectory(requested)){
       throw new NoSuchElementException("파일을 찾을 수 없음");
@@ -103,7 +104,8 @@ public class FileService {
     File file = findFile(id);
     Path target = Paths.get(file.getPath()).normalize();
     if (!target.startsWith(uploadPath)){
-      log.warn("삭제 요청 거부"); // 에러 직접 던지지 않고 로그로 기록해 조용히 처리
+      log.warn("삭제 요청 거부");
+      throw new IllegalArgumentException("파일 경로가 유효하지 않음"); // 예외를 던져 삭제 로직을 건너뛰도록 처리
     }
     try {
       Files.deleteIfExists(target);
