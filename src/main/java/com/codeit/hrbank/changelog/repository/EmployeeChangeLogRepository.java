@@ -34,4 +34,6 @@ public interface EmployeeChangeLogRepository extends JpaRepository<EmployeeChang
             @Param("toDate") Instant toDate
     );
 
+    boolean existsByCreatedAtAfter(Instant createdAt);
+
 }

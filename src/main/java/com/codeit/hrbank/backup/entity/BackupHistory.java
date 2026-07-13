@@ -1,6 +1,8 @@
 package com.codeit.hrbank.backup.entity;
 
 import com.codeit.hrbank.backup.type.BackupStatus;
+import com.codeit.hrbank.common.BaseEntity;
+import com.codeit.hrbank.file.entity.File;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -12,16 +14,11 @@ import java.time.Instant;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "backup_histories")
-public class BackupHistory {
+public class BackupHistory extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @Column(nullable = false, updatable = false)
-    private Instant createdAt;
-
-    private Instant updatedAt;
 
     @Column(nullable = false)
     private String worker;
@@ -35,16 +32,14 @@ public class BackupHistory {
     @Column(nullable = false)
     private BackupStatus status;
 
-    @Column(name = "file_id")
-    private Long fileId;
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "file_id")
+    private File file;
 
     private BackupHistory(String worker, BackupStatus status) {
-        Instant now = Instant.now();
-
         this.worker = worker;
-        this.startedAt = now;
+        this.startedAt = Instant.now();
         this.status = status;
-        this.createdAt = Instant.now();
     }
 
     public static BackupHistory skipped(String worker) {
@@ -58,18 +53,16 @@ public class BackupHistory {
         return new BackupHistory(worker, BackupStatus.IN_PROGRESS);
     }
 
-    public void complete(Instant endedAt) {
-        this.updatedAt = Instant.now();
-        this.endedAt = endedAt;
+    public void complete(Instant endedAt, File file) {
+        this.endedAt = Instant.now();
         this.status = BackupStatus.COMPLETED;
-//        this.file = file;
+        this.file = file;
     }
 
-    public void fail(Instant endedAt) {
-        this.updatedAt = Instant.now();
-        this.endedAt = endedAt;
+    public void fail(Instant endedAt, File file) {
+        this.endedAt = Instant.now();
         this.status = BackupStatus.FAILED;
-//        this.file = file;
+        this.file = file;
     }
 
 }

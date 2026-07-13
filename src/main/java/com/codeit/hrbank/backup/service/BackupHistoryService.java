@@ -5,6 +5,7 @@ import com.codeit.hrbank.backup.dto.response.BackupDto;
 import com.codeit.hrbank.backup.entity.BackupHistory;
 import com.codeit.hrbank.backup.repository.BackupHistoryRepository;
 import com.codeit.hrbank.backup.type.BackupStatus;
+import com.codeit.hrbank.changelog.repository.EmployeeChangeLogRepository;
 import com.codeit.hrbank.employee.entity.Employee;
 import com.codeit.hrbank.employee.repository.EmployeeRepository;
 import lombok.RequiredArgsConstructor;
@@ -32,7 +33,7 @@ public class BackupHistoryService {
     private final BackupHistoryRepository backupHistoryRepository;
     private final EmployeeRepository employeeRepository;
     // Todo EmployeeChangeLog 관련 PR 머지되면 주석 풀기
-//    private final EmployeeChangeLogRepository employeeChangeLogRepository;
+    private final EmployeeChangeLogRepository employeeChangeLogRepository;
 
     //저장 디렉토리
     @Value("${file.upload-dir}")
@@ -50,46 +51,45 @@ public class BackupHistoryService {
                 .orElseThrow(() -> new RuntimeException("dff"));
 
         // Todo EmployeeChangeLog 관련 PR 머지되면 주석 풀기
-//        // 가장 최근 완료된 배치 작업 시간 이후 직원 데이터가 변경된 경우 있는지 체크
-//        boolean isBackupNeed = employeeChangeLogRepository.existsByCreatedAtAfter(lastBackupHistory.getStartedAt());
-//
-//        // 백업 필요 시 inProgress 상태로 백업 시작, 백업 필요 없을 시 skipped 상태로 백업 건너뛰기
-//        BackupHistory backupHistory = (isBackupNeed)
-//                ? BackupHistory.inProgress(worker)
-//                : BackupHistory.skipped(worker);
-//
-//        // 백업 이력 저장
-//        backupHistory = backupHistoryRepository.save(backupHistory);
-//
-//        // 백업 skip 시 프로세스 종료
-//        if (!isBackupNeed)
-//            return BackupDto.from(backupHistory);
-//
-//        // 백업 파일 저장 하는 로직
-//        // 백업 파일 경로 지정
-//        String fileName = DateTimeFormatter
-//                .ofPattern("yyyyMMdd_HHmmss")
-//                .withZone(ZoneId.systemDefault())
-//                .format(backupHistory.getStartedAt()) + ".csv";
-//        Path backupFilePath = uploadDir.resolve("backups").resolve(fileName);
-//
-//        // 백업 파일 저장
-//        try {
-//            saveToCSV(backupFilePath);
-//        } catch (IOException e) {
-//            // 백업 파일 저장 실패 시
-//            backupHistory.fail(Instant.now());
-////            throw new RuntimeException(e);
-//        }
-//
-//        // Todo 파일 저장 로직 (파일 관련 PR 머지되면 진행)
-//
-//        // 백업 파일 저장 성공 시
-//        backupHistory.complete(Instant.now());  //파일 관련 PR 머지되면 파일 객체도 파라미터로 추가
-//
-//        return BackupDto.from(backupHistory);
-        // Todo 임시 적용, 나중에 삭제하기
-        return BackupDto.from(BackupHistory.skipped(""));
+        // 가장 최근 완료된 배치 작업 시간 이후 직원 데이터가 변경된 경우 있는지 체크
+        boolean isBackupNeed = employeeChangeLogRepository.existsByCreatedAtAfter(lastBackupHistory.getStartedAt());
+
+        // 백업 필요 시 inProgress 상태로 백업 시작, 백업 필요 없을 시 skipped 상태로 백업 건너뛰기
+        BackupHistory backupHistory = (isBackupNeed)
+                ? BackupHistory.inProgress(worker)
+                : BackupHistory.skipped(worker);
+
+        // 백업 이력 저장
+        backupHistory = backupHistoryRepository.save(backupHistory);
+
+        // 백업 skip 시 프로세스 종료
+        if (!isBackupNeed)
+            return BackupDto.from(backupHistory);
+
+        // 백업 파일 저장 하는 로직
+        // 백업 파일 경로 지정
+        String fileName = DateTimeFormatter
+                .ofPattern("yyyyMMdd_HHmmss")
+                .withZone(ZoneId.systemDefault())
+                .format(backupHistory.getStartedAt()) + ".csv";
+        Path backupFilePath = uploadDir.resolve("backups").resolve(fileName);
+
+        // 백업 파일 저장
+        try {
+            saveToCSV(backupFilePath);
+        } catch (IOException e) {
+            // 백업 파일 저장 실패 시
+            backupHistory.fail(Instant.now());
+            //예외처리하기
+//            throw new RuntimeException(e);
+        }
+
+        // Todo 파일 저장 로직 (파일 관련 PR 머지되면 진행)
+
+        // 백업 파일 저장 성공 시
+        backupHistory.complete(Instant.now());  //파일 관련 PR 머지되면 파일 객체도 파라미터로 추가
+
+        return BackupDto.from(backupHistory);
     }
 
     @Transactional

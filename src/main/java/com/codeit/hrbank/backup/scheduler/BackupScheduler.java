@@ -13,7 +13,7 @@ public class BackupScheduler {
 
     private final BackupHistoryService backupHistoryService;
 
-    @Scheduled(fixedDelayString = "3600000")
+    @Scheduled(fixedDelayString = "${backup.schedule.interval}")
     public void autoBackup() {
         log.info("자동 백업 시작");
 
