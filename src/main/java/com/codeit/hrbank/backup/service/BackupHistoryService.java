@@ -93,7 +93,7 @@ public class BackupHistoryService {
             saveToCSV(backupFilePath);
 
             //파일 객체 생성 및 저장
-            File backupFile = createFileEntity(fileName, backupFilePath);
+            File backupFile = createFileEntity(fileName, "text/csv", backupFilePath);
 
             // 백업 이력 완료로 수정
             backupHistory.complete(backupFile);
@@ -112,7 +112,7 @@ public class BackupHistoryService {
                 saveErrorLog(errorLogFilePath, e);
 
                 //파일 객체 생성 및 저장
-                File logFile = createFileEntity(errorLogFileName, errorLogFilePath);
+                File logFile = createFileEntity(errorLogFileName, "text/plain", errorLogFilePath);
 
                 // 백업 이력 실패로 수정
                 backupHistory.fail(logFile);
@@ -279,13 +279,15 @@ public class BackupHistoryService {
                 .format(startedAt) + type;
     }
     //파일 객체 생성 및 저장하는 메서드
-    private File createFileEntity(String fileName, Path filePath) throws IOException {
+    private File createFileEntity(String fileName, String contentType, Path filePath) throws IOException {
         File file = new File(
                 fileName,
                 fileName,
-                Files.probeContentType(filePath),
+                contentType,
                 Files.size(filePath),
-                filePath.toString()
+                // Todo 파일 저장 경로 회의하고 결정하기 (절대경로? 상대경로?)
+//                filePath.toString()       //상대경로
+                filePath.toAbsolutePath().normalize().toString()        //절대경로
         );
 
         return fileRepository.save(file);

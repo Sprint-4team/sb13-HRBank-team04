@@ -14,13 +14,17 @@ public record BackupDto(
         Long fileId
 ) {
     public static BackupDto from(BackupHistory history) {
+        Long fileId = (history.getFile() == null)
+                ? null
+                : history.getFile().getId();
+
         return new BackupDto(
                 history.getId(),
                 history.getWorker(),
                 history.getStartedAt(),
                 history.getEndedAt(),
                 history.getStatus(),
-                history.getFile().getId()
+                fileId
         );
     }
 }
