@@ -53,13 +53,13 @@ public class BackupHistory extends BaseEntity {
         return new BackupHistory(worker, BackupStatus.IN_PROGRESS);
     }
 
-    public void complete(Instant endedAt, File file) {
+    public void complete(File file) {
         this.endedAt = Instant.now();
         this.status = BackupStatus.COMPLETED;
         this.file = file;
     }
 
-    public void fail(Instant endedAt, File file) {
+    public void fail(File file) {
         this.endedAt = Instant.now();
         this.status = BackupStatus.FAILED;
         this.file = file;

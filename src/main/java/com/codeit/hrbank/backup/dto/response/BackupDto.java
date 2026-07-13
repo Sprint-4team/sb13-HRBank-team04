@@ -20,7 +20,7 @@ public record BackupDto(
                 history.getStartedAt(),
                 history.getEndedAt(),
                 history.getStatus(),
-                history.getFileId()
+                history.getFile().getId()
         );
     }
 }
