@@ -1,14 +1,9 @@
 package com.codeit.hrbank.employee.entity;
 
+import com.codeit.hrbank.department.entity.Department;
 import com.codeit.hrbank.employee.enums.EmployeeStatus;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EntityListeners;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import com.codeit.hrbank.file.entity.File;
+import jakarta.persistence.*;
 import java.time.Instant;
 import java.time.LocalDate;
 import lombok.AccessLevel;
@@ -26,11 +21,11 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
-@Builder//추후 필수 필드만 빋는 셍성자 만들어서 옮길 예정입니다.
+@Builder
 public class Employee {
 
   @Id
-  @GeneratedValue(strategy = jakarta.persistence.GenerationType.IDENTITY)
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
   @Column(name = "created_at", nullable = false, updatable = false)
@@ -60,22 +55,25 @@ public class Employee {
   @Enumerated(EnumType.STRING)
   private EmployeeStatus status;
 
-  @Column(name = "department_id", nullable = false)
-  private Long departmentId;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "department_id", nullable = false)
+  private Department department;
 
-  @Column(name = "profile_image_id", nullable = true)
-  private Long profileImageId;
+  @OneToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "profile_image_id")
+  private File profileImage;
 
-
-  public void update(String name, String email, Long departmentId,
+  public void update(String name, String email, Department department,
       String position, LocalDate hireDate, EmployeeStatus status) {
     this.name = name;
     this.email = email;
-    this.departmentId = departmentId;
+    this.department = department;
     this.position = position;
     this.hireDate = hireDate;
     this.status = status;
-    //this.profileImageId 7월 11일 진희님과 맞출 예정
   }
 
+  public void updateProfileImage(File profileImage) {
+    this.profileImage = profileImage;
+  }
 }

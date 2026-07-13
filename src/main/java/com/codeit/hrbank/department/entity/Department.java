@@ -1,4 +1,4 @@
-package com.codeit.hrbank.department;
+package com.codeit.hrbank.department.entity;
 
 import com.codeit.hrbank.common.BaseEntity;
 import jakarta.persistence.*;
