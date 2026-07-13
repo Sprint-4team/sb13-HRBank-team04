@@ -1,5 +1,6 @@
 package com.codeit.hrbank.employee.controller;
 
+import com.codeit.hrbank.employee.dto.CursorPageResponseEmployeeDto;
 import com.codeit.hrbank.employee.dto.EmployeeDto;
 import com.codeit.hrbank.employee.dto.request.EmployeeCreateRequest;
 import com.codeit.hrbank.employee.dto.request.EmployeeSearchCondition;
@@ -10,6 +11,7 @@ import jakarta.validation.Valid;
 import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -43,23 +45,27 @@ public class EmployeeController {
   }
 
   @GetMapping
-  public ResponseEntity<List<EmployeeDto>> findEmployees(
+  public ResponseEntity<CursorPageResponseEmployeeDto> findEmployees(
       @RequestParam(required = false) String nameOrEmail,
       @RequestParam(required = false) String departmentName,
       @RequestParam(required = false) String position,
       @RequestParam(required = false) String employeeNumber,
       @RequestParam(required = false) LocalDate hireDateFrom,
       @RequestParam(required = false) LocalDate hireDateTo,
-      @RequestParam(required = false) EmployeeStatus status
+      @RequestParam(required = false) EmployeeStatus status,
+      @RequestParam(required = false) String cursor,
+      @RequestParam(required = false) Long idAfter,
+      @RequestParam(defaultValue = "10") int size,
+      @RequestParam(defaultValue = "name") String sortField,
+      @RequestParam(defaultValue = "ASC") Sort.Direction sortDirection
   ) {
     EmployeeSearchCondition condition = new EmployeeSearchCondition(
         nameOrEmail, departmentName, position, employeeNumber,
         hireDateFrom, hireDateTo, status,
-        null, null, 0, null, null  // idAfter, cursor, size, sortField, sortDirection - 다음 단계
+        cursor, idAfter, size, sortField, sortDirection
     );
 
-    List<EmployeeDto> employees = employeeService.findEmployees(condition);
-    return ResponseEntity.ok(employees);
+    return ResponseEntity.ok(employeeService.findEmployees(condition));
   }
 
   @PatchMapping("/{id}")

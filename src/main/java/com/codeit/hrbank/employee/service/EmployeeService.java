@@ -1,5 +1,6 @@
 package com.codeit.hrbank.employee.service;
 
+import com.codeit.hrbank.employee.dto.CursorPageResponseEmployeeDto;
 import com.codeit.hrbank.employee.dto.EmployeeDto;
 import com.codeit.hrbank.employee.dto.request.EmployeeCreateRequest;
 import com.codeit.hrbank.employee.dto.request.EmployeeSearchCondition;
@@ -13,7 +14,7 @@ public interface EmployeeService {
   EmployeeDto findEmployee(Long id);
 
   // EmployeeService
-  List<EmployeeDto> findEmployees(EmployeeSearchCondition condition);
+  CursorPageResponseEmployeeDto findEmployees(EmployeeSearchCondition condition);
 
   EmployeeDto update(Long id, EmployeeUpdateRequest request);
 

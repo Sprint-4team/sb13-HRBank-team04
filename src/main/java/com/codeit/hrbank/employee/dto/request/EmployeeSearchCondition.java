@@ -12,9 +12,9 @@ public record EmployeeSearchCondition(
     LocalDate hireDateFrom,
     LocalDate hireDateTo,
     EmployeeStatus status,
-    Long idAfter,            // 커서 페이지네이션용
-    String cursor,
+    String cursor,        // 마지막 요소의 정렬 기준값 (문자열로 전달받음)
+    Long idAfter,          // 마지막 요소의 id (tie-breaker)
     int size,
-    String sortField,        // 정렬 기준 (name/hireDate/employeeNumber 중 1개)
+    String sortField,      // name / hireDate / employeeNumber
     Sort.Direction sortDirection
 ) {}

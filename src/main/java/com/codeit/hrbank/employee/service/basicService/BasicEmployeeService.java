@@ -3,6 +3,7 @@ package com.codeit.hrbank.employee.service.basicService;
 import com.codeit.hrbank.department.Department;
 import com.codeit.hrbank.department.DepartmentNotFoundException;
 import com.codeit.hrbank.department.DepartmentRepository;
+import com.codeit.hrbank.employee.dto.CursorPageResponseEmployeeDto;
 import com.codeit.hrbank.employee.dto.EmployeeDto;
 import com.codeit.hrbank.employee.dto.request.EmployeeCreateRequest;
 import com.codeit.hrbank.employee.dto.request.EmployeeSearchCondition;
@@ -76,17 +77,37 @@ public class BasicEmployeeService implements EmployeeService {
 
   @Override
   @Transactional(readOnly = true)
-  public List<EmployeeDto> findEmployees(EmployeeSearchCondition condition) {
+  public CursorPageResponseEmployeeDto findEmployees(EmployeeSearchCondition condition) {
     log.info("직원 목록 조회 요청: condition = {}", condition);
 
+    int size = condition.size() > 0 ? condition.size() : 10;
     List<Employee> employees = employeeRepository.searchEmployees(condition);
 
-    List<EmployeeDto> result = employees.stream()
+    boolean hasNext = employees.size() > size;
+    List<Employee> content = hasNext ? employees.subList(0, size) : employees;
+
+    List<EmployeeDto> dtoList = content.stream()
         .map(EmployeeDto::from)
         .toList();
 
-    log.info("직원 목록 조회 완료: count = {}", result.size());
-    return result;
+    String nextCursor = null;
+    Long nextIdAfter = null;
+    if (!content.isEmpty()) {
+      Employee last = content.get(content.size() - 1);
+      nextIdAfter = last.getId();
+      String sortField = condition.sortField() != null ? condition.sortField() : "name";
+      nextCursor = switch (sortField) {
+        case "hireDate" -> last.getHireDate().toString();
+        case "employeeNumber" -> last.getEmployeeNumber();
+        default -> last.getName();
+      };
+    }
+
+    log.info("직원 목록 조회 완료: count = {}", dtoList.size());
+
+    return new CursorPageResponseEmployeeDto(
+        dtoList, nextCursor, nextIdAfter, dtoList.size(), null, hasNext
+    );
   }
 
 
