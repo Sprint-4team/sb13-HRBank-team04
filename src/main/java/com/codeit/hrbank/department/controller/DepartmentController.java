@@ -38,4 +38,10 @@ public class DepartmentController {
         return ResponseEntity.noContent().build();
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<DepartmentDto> find(@PathVariable("id") Long id) {
+        DepartmentDto response = departmentService.find(id);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
 }

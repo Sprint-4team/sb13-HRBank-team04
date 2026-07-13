@@ -10,5 +10,7 @@ public interface DepartmentService {
 
     DepartmentDto update(Long id, DepartmentUpdateRequest request);
 
+    DepartmentDto find(Long id);
+
     void delete(Long id);
 }
