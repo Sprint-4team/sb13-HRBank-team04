@@ -1,8 +1,6 @@
 package com.codeit.hrbank.department.service;
 
-import com.codeit.hrbank.department.dto.DepartmentCreateRequest;
-import com.codeit.hrbank.department.dto.DepartmentDto;
-import com.codeit.hrbank.department.dto.DepartmentUpdateRequest;
+import com.codeit.hrbank.department.dto.*;
 
 public interface DepartmentService {
 
@@ -13,4 +11,6 @@ public interface DepartmentService {
     DepartmentDto find(Long id);
 
     void delete(Long id);
+
+    CursorPageResponseDepartmentDto findAll(DepartmentSearchCondition condition);
 }
