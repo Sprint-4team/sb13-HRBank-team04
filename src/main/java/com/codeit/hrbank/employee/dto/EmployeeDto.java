@@ -10,22 +10,27 @@ public record EmployeeDto(
     String email,
     String employeeNumber,
     Long departmentId,
+    String departmentName,
     String position,
     LocalDate hireDate,
     EmployeeStatus status,
     Long profileImageId
 ) {
+
   public static EmployeeDto from(Employee employee){
     return new EmployeeDto(
         employee.getId(),
         employee.getName(),
         employee.getEmail(),
         employee.getEmployeeNumber(),
-        employee.getDepartmentId(),
+        employee.getDepartment().getId(),
+        employee.getDepartment().getName(),
         employee.getPosition(),
         employee.getHireDate(),
         employee.getStatus(),
-        employee.getProfileImageId());
+        employee.getProfileImage() != null
+            ? employee.getProfileImage().getId() : null
+    );
   }
 
 }
