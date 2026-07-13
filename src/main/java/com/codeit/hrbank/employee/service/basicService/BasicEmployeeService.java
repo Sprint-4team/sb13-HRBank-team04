@@ -1,13 +1,18 @@
 package com.codeit.hrbank.employee.service.basicService;
 
+import com.codeit.hrbank.department.Department;
+import com.codeit.hrbank.department.DepartmentNotFoundException;
+import com.codeit.hrbank.department.DepartmentRepository;
 import com.codeit.hrbank.employee.dto.EmployeeDto;
 import com.codeit.hrbank.employee.dto.request.EmployeeCreateRequest;
+import com.codeit.hrbank.employee.dto.request.EmployeeSearchCondition;
 import com.codeit.hrbank.employee.dto.request.EmployeeUpdateRequest;
 import com.codeit.hrbank.employee.entity.Employee;
 import com.codeit.hrbank.employee.enums.EmployeeStatus;
 import com.codeit.hrbank.employee.repository.EmployeeRepository;
 import com.codeit.hrbank.employee.service.EmployeeService;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.NoSuchElementException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class BasicEmployeeService implements EmployeeService {
 
   private final EmployeeRepository employeeRepository;
+  private final DepartmentRepository departmentRepository;
 
 
   @Override
@@ -34,6 +40,9 @@ public class BasicEmployeeService implements EmployeeService {
 
     String employeeNumber = generateEmployeeNumber(request.hireDate());
 
+    Department department = departmentRepository.findById(request.departmentId())
+        .orElseThrow(() -> new DepartmentNotFoundException(request.departmentId()));
+
     Employee employee = Employee.builder()
         .name(request.name())
         .email(request.email())
@@ -41,8 +50,8 @@ public class BasicEmployeeService implements EmployeeService {
         .position(request.position())
         .hireDate(request.hireDate())
         .status(EmployeeStatus.ACTIVE)
-        .departmentId(request.departmentId())
-        .profileImageId(null)
+        .department(department)
+        .profileImage(null)
         .build();
 
     Employee saved = employeeRepository.save(employee);
@@ -65,6 +74,21 @@ public class BasicEmployeeService implements EmployeeService {
     return EmployeeDto.from(employee);
   }
 
+  @Override
+  @Transactional(readOnly = true)
+  public List<EmployeeDto> findEmployees(EmployeeSearchCondition condition) {
+    log.info("직원 목록 조회 요청: condition = {}", condition);
+
+    List<Employee> employees = employeeRepository.searchEmployees(condition);
+
+    List<EmployeeDto> result = employees.stream()
+        .map(EmployeeDto::from)
+        .toList();
+
+    log.info("직원 목록 조회 완료: count = {}", result.size());
+    return result;
+  }
+
 
   @Override
   @Transactional
@@ -81,9 +105,11 @@ public class BasicEmployeeService implements EmployeeService {
         throw new RuntimeException("이미 사용중인 Email 입니다.");
     }
 
+    Department department = departmentRepository.findById(request.departmentId())
+        .orElseThrow(() -> new DepartmentNotFoundException(request.departmentId()));
 
     employee.update(request.name(),request.email(),
-        request.departmentId(),request.position(),
+        department,request.position(),
         request.hireDate(),request.status());
 
     log.info("직원 정보 수정 완료: id = {}", id);
