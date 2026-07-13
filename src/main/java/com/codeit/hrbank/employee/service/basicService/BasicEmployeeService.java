@@ -12,6 +12,8 @@ import com.codeit.hrbank.employee.entity.Employee;
 import com.codeit.hrbank.employee.enums.EmployeeStatus;
 import com.codeit.hrbank.employee.repository.EmployeeRepository;
 import com.codeit.hrbank.employee.service.EmployeeService;
+import com.codeit.hrbank.file.entity.File;
+import com.codeit.hrbank.file.service.FileService;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -19,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @RequiredArgsConstructor
@@ -27,22 +30,27 @@ public class BasicEmployeeService implements EmployeeService {
 
   private final EmployeeRepository employeeRepository;
   private final DepartmentRepository departmentRepository;
+  private final FileService fileService;
 
 
   @Override
   @Transactional
-  public EmployeeDto createEmployee(EmployeeCreateRequest request) {
+  public EmployeeDto createEmployee(EmployeeCreateRequest request, MultipartFile profile) {
     log.info("직원 생성 요청: email = {}", request.email());
 
     if (employeeRepository.existsByEmail(request.email())) {
       throw new RuntimeException("이미 존재하는 Email입니다." + request.email());
-      //예외는 추후 커스텀을 고려해보겠습니다.
     }
-
-    String employeeNumber = generateEmployeeNumber(request.hireDate());
 
     Department department = departmentRepository.findById(request.departmentId())
         .orElseThrow(() -> new DepartmentNotFoundException(request.departmentId()));
+
+    String employeeNumber = generateEmployeeNumber(request.hireDate());
+
+    File profileImage = null;
+    if (profile != null && !profile.isEmpty()) {
+      profileImage = fileService.createFile(profile);   // ← createFile로 연결
+    }
 
     Employee employee = Employee.builder()
         .name(request.name())
@@ -52,7 +60,7 @@ public class BasicEmployeeService implements EmployeeService {
         .hireDate(request.hireDate())
         .status(EmployeeStatus.ACTIVE)
         .department(department)
-        .profileImage(null)
+        .profileImage(profileImage)
         .build();
 
     Employee saved = employeeRepository.save(employee);
@@ -143,12 +151,14 @@ public class BasicEmployeeService implements EmployeeService {
   public void delete(Long id) {
     log.info("직원정보 삭제 요청 id = {}", id);
 
-    employeeRepository.findById(id)
-        .orElseThrow(() -> new NoSuchElementException("해당 id의 직원을 찾지 못 헀습니다." + id));
+    Employee employee = employeeRepository.findById(id)
+        .orElseThrow(() -> new NoSuchElementException("해당 id의 직원을 찾지 못했습니다." + id));
 
-    // TODO: 프로필 이미지 삭제 (profileImageId를 파일 파트에 전달) - 7/11 연동
+    if (employee.getProfileImage() != null) {
+      fileService.deleteFile(employee.getProfileImage().getId());
+    }
+
     // TODO: 삭제 이력(DELETED) 기록 - 이력 연동 시
-
 
     employeeRepository.deleteById(id);
 
