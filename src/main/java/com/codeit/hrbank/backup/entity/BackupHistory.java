@@ -11,7 +11,7 @@ import java.time.Instant;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-//@Table(name = "backup_histories")
+@Table(name = "backup_history", schema = "public")
 public class BackupHistory {
 
     @Id

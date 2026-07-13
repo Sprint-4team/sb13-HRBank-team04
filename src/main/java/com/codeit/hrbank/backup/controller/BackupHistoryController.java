@@ -6,12 +6,11 @@ import com.codeit.hrbank.backup.dto.response.CursorPageResponseBackupDto;
 import com.codeit.hrbank.backup.service.BackupHistoryService;
 import com.codeit.hrbank.backup.type.BackupStatus;
 import jakarta.servlet.http.HttpServletRequest;
-import java.time.Instant;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Sort;
-import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -27,39 +26,24 @@ public class BackupHistoryController {
     @PostMapping
     public ResponseEntity<BackupDto> createBackupHistory(HttpServletRequest request) {
         String worker = request.getRemoteAddr();
-
         BackupDto backupDto = backupHistoryService.createBackupHistory(worker);
 
-        return ResponseEntity.ok(backupDto);
+        return ResponseEntity.status(HttpStatus.OK).body(backupDto);
     }
 
+    // 데이터 백업 목록 조회
     @GetMapping
     public ResponseEntity<CursorPageResponseBackupDto> findBackupHistories(
-            @RequestParam(required = false) String worker,
-            @RequestParam(required = false) BackupStatus status,
-            @RequestParam(required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant startedAtFrom,
-            @RequestParam(required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant startedAtTo,
-            @RequestParam(required = false) Long idAfter,
-            @RequestParam(required = false) String cursor,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "startedAt") String sortField,
-            @RequestParam(defaultValue = "DESC") Sort.Direction sortDirection) {
-
-        BackupSearchCondition condition = new BackupSearchCondition(
-                worker, status, startedAtFrom, startedAtTo, idAfter, cursor, size, sortField, sortDirection);
-
-        backupHistoryService.findBackupHistories(condition);
-
-        return ResponseEntity.ok(null);
+            @ModelAttribute BackupSearchCondition condition) {
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(backupHistoryService.findBackupHistories(condition));
     }
 
+    // 마지막 백업 조회
     @GetMapping("/latest")
-    public ResponseEntity<BackupDto> findLatestBackupHistory(@RequestParam(defaultValue = "COMPLETED") BackupStatus status) {
-        BackupDto backupDto = backupHistoryService.findLatestBackupHistory(status);
-
-        return ResponseEntity.ok(backupDto);
+    public ResponseEntity<BackupDto> findLatestBackupHistory(
+            @RequestParam(name = "status", defaultValue = "COMPLETED") BackupStatus status) {
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(backupHistoryService.findLatestBackupHistory(status));
     }
-
 }
