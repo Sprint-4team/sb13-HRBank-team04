@@ -61,12 +61,12 @@ public class EmployeeController {
       @RequestParam(required = false) Long idAfter,
       @RequestParam(defaultValue = "10") int size,
       @RequestParam(defaultValue = "name") String sortField,
-      @RequestParam(defaultValue = "ASC") Sort.Direction sortDirection
-  ) {
+      @RequestParam(defaultValue = "ASC") String sortDirection) {
     EmployeeSearchCondition condition = new EmployeeSearchCondition(
         nameOrEmail, departmentName, position, employeeNumber,
         hireDateFrom, hireDateTo, status,
-        cursor, idAfter, size, sortField, sortDirection
+        cursor, idAfter, size, sortField,
+        Sort.Direction.fromString(sortDirection)
     );
 
     return ResponseEntity.ok(employeeService.findEmployees(condition));
