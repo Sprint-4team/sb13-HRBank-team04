@@ -1,8 +1,13 @@
-package com.codeit.hrbank.department;
+package com.codeit.hrbank.department.service;
 
 import com.codeit.hrbank.department.dto.DepartmentCreateRequest;
 import com.codeit.hrbank.department.dto.DepartmentDto;
 import com.codeit.hrbank.department.dto.DepartmentUpdateRequest;
+import com.codeit.hrbank.department.entity.Department;
+import com.codeit.hrbank.department.exception.DepartmentHasEmployeesException;
+import com.codeit.hrbank.department.exception.DepartmentNotFoundException;
+import com.codeit.hrbank.department.exception.DuplicateDepartmentNameException;
+import com.codeit.hrbank.department.repository.DepartmentRepository;
 import com.codeit.hrbank.employee.repository.EmployeeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -77,6 +82,22 @@ public class DepartmentServiceImpl implements DepartmentService {
         }
 
         departmentRepository.delete(department);
+    }
+
+    @Override
+    public DepartmentDto find(Long id) {
+        Department department = departmentRepository.findById(id)
+                .orElseThrow(() -> new DepartmentNotFoundException(id));
+
+        long employeeCount = employeeRepository.countByDepartmentId(department.getId());
+
+        return new DepartmentDto(
+                department.getId(),
+                department.getName(),
+                department.getDescription(),
+                department.getEstablishedDate(),
+                employeeCount
+        );
     }
 
 }
