@@ -1,8 +1,9 @@
-package com.codeit.hrbank.department;
+package com.codeit.hrbank.department.controller;
 
 import com.codeit.hrbank.department.dto.DepartmentCreateRequest;
 import com.codeit.hrbank.department.dto.DepartmentDto;
 import com.codeit.hrbank.department.dto.DepartmentUpdateRequest;
+import com.codeit.hrbank.department.service.DepartmentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -28,7 +29,7 @@ public class DepartmentController {
             @Valid @RequestBody DepartmentUpdateRequest request
     ) {
         DepartmentDto response = departmentService.update(id, request);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
     @DeleteMapping("/{id}")
