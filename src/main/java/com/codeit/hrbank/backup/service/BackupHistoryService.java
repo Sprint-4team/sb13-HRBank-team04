@@ -30,6 +30,7 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -40,8 +41,8 @@ public class BackupHistoryService {
 
     private final BackupHistoryRepository backupHistoryRepository;
     private final EmployeeRepository employeeRepository;
-    // Todo EmployeeChangeLog 관련 PR 머지되면 주석 풀기
     private final EmployeeChangeLogRepository employeeChangeLogRepository;
+    private final BackupHistoryCreationService backupHistoryCreationService;
 
     //저장 디렉토리
     @Value("${file.upload-dir}")
@@ -54,26 +55,30 @@ public class BackupHistoryService {
     @Transactional
     public BackupDto createBackupHistory(String worker) {
         // status가 COMPLETED인 가장 최근 백업 정보 검색
-        BackupHistory lastBackupHistory = backupHistoryRepository.findTopByStatusOrderByStartedAtDesc(BackupStatus.COMPLETED)
-                .orElseThrow(() -> new RuntimeException("dff"));
+        Optional<BackupHistory> lastBackupHistory = backupHistoryRepository.findTopByStatusOrderByStartedAtDesc(BackupStatus.COMPLETED);
 
-        // Todo EmployeeChangeLog 관련 PR 머지되면 주석 풀기
-        // 가장 최근 완료된 배치 작업 시간 이후 직원 데이터가 변경된 경우 있는지 체크
-        boolean isBackupNeed = employeeChangeLogRepository.existsByCreatedAtAfter(lastBackupHistory.getStartedAt());
+        // 최근 완료 백업이 있으면 그 이후 직원 변경 여부 확인
+        // 완료 백업이 없으면 최초 백업이므로 true
+        boolean isBackupNeed = lastBackupHistory
+                .map(backupHistory ->
+                        employeeChangeLogRepository.existsByCreatedAtAfter(backupHistory.getStartedAt()))
+                .orElse(true);
 
-        // 백업 필요 시 inProgress 상태로 백업 시작, 백업 필요 없을 시 skipped 상태로 백업 건너뛰기
-        BackupHistory backupHistory = (isBackupNeed)
-                ? BackupHistory.inProgress(worker)
-                : BackupHistory.skipped(worker);
+        // 백업 필요 시 IN_PROGRESS, 필요 없으면 SKIPPED 이력 생성
+        // 별도 트랜잭션 생성되도록 구현함 -> Propagation.REQUIRES_NEW
+        Long backupHistoryId = (isBackupNeed)
+                ? backupHistoryCreationService.createInProgress(worker)
+                : backupHistoryCreationService.createSkipped(worker);
 
-        // 백업 이력 저장
-        backupHistory = backupHistoryRepository.save(backupHistory);
+        // 생성된 백업 이력 조회
+        BackupHistory backupHistory = backupHistoryRepository.findById(backupHistoryId)
+                .orElseThrow(() -> new RuntimeException("방금 막 생성한 백업 정보가 없습니다."));
 
         // 백업 skip 시 프로세스 종료
         if (!isBackupNeed)
             return BackupDto.from(backupHistory);
 
-        // 백업 파일 저장 하는 로직
+        // 백업 파일 저장 하는 로직 시작
         // 백업 파일 경로 지정
         String fileName = DateTimeFormatter
                 .ofPattern("yyyyMMdd_HHmmss")
@@ -90,8 +95,6 @@ public class BackupHistoryService {
             //예외처리하기
 //            throw new RuntimeException(e);
         }
-
-        // Todo 파일 저장 로직 (파일 관련 PR 머지되면 진행)
 
         // 백업 파일 저장 성공 시
 //        backupHistory.complete();  //파일 관련 PR 머지되면 파일 객체도 파라미터로 추가
@@ -238,7 +241,7 @@ public class BackupHistoryService {
                 employee.getEmployeeNumber(),
                 employee.getName(),
                 employee.getEmail(),
-                String.valueOf(employee.getDepartmentId()), //employee.getDepartment().getName(), 나중에 employee 저장할 때 id 말고 employee 객체를 저장하도록 요청하기
+                String.valueOf(employee.getDepartmentId()), // Todo employee.getDepartment().getName(), 나중에 employee 저장할 때 id 말고 employee 객체를 저장하도록 요청하기
                 employee.getPosition(),
                 String.valueOf(employee.getHireDate()),
                 String.valueOf(employee.getStatus())
