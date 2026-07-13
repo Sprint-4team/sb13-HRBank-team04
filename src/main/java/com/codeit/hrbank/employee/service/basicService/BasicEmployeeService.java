@@ -1,8 +1,8 @@
 package com.codeit.hrbank.employee.service.basicService;
 
-import com.codeit.hrbank.department.Department;
-import com.codeit.hrbank.department.DepartmentNotFoundException;
-import com.codeit.hrbank.department.DepartmentRepository;
+import com.codeit.hrbank.department.entity.Department;
+import com.codeit.hrbank.department.exception.DepartmentNotFoundException;
+import com.codeit.hrbank.department.repository.DepartmentRepository;
 import com.codeit.hrbank.employee.dto.CursorPageResponseEmployeeDto;
 import com.codeit.hrbank.employee.dto.EmployeeDto;
 import com.codeit.hrbank.employee.dto.request.EmployeeCreateRequest;

@@ -3,7 +3,7 @@ package com.codeit.hrbank.employee.repository;
 import com.codeit.hrbank.employee.dto.request.EmployeeSearchCondition;
 import com.codeit.hrbank.employee.entity.Employee;
 import com.codeit.hrbank.employee.entity.QEmployee;
-import com.codeit.hrbank.department.QDepartment;
+import com.codeit.hrbank.department.entity.QDepartment;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.BooleanExpression;

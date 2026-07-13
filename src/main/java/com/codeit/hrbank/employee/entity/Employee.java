@@ -1,6 +1,6 @@
 package com.codeit.hrbank.employee.entity;
 
-import com.codeit.hrbank.department.Department;
+import com.codeit.hrbank.department.entity.Department;
 import com.codeit.hrbank.employee.enums.EmployeeStatus;
 import com.codeit.hrbank.file.entity.File;
 import jakarta.persistence.*;
