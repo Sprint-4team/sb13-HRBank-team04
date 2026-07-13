@@ -34,3 +34,8 @@ server:
 
 file:
   upload-dir: uploads
+
+backup:
+  schedule:
+    interval: 3600000     # 3600000ms : 1시간, 테스트: 60000 : 1분
+
