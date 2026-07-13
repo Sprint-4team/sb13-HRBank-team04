@@ -264,7 +264,7 @@ public class BackupHistoryService {
                 employee.getEmployeeNumber(),
                 employee.getName(),
                 employee.getEmail(),
-                String.valueOf(employee.getDepartmentId()), // Todo employee.getDepartment().getName(), 나중에 employee 저장할 때 id 말고 employee 객체를 저장하도록 요청하기
+                employee.getDepartment().getName(),
                 employee.getPosition(),
                 String.valueOf(employee.getHireDate()),
                 String.valueOf(employee.getStatus())
