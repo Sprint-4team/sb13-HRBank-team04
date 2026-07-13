@@ -49,11 +49,12 @@ public class DepartmentController {
             @RequestParam(required = false) Long idAfter,
             @RequestParam(required = false) String cursor,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(required = false) String sortField,
-            @RequestParam(required = false) Sort.Direction sortDirection
+            @RequestParam(defaultValue = "establishedDate") String sortField,
+            @RequestParam(defaultValue = "ASC") String sortDirection
     ) {
         DepartmentSearchCondition condition = new DepartmentSearchCondition(
-                nameOrDescription, idAfter, cursor, size, sortField, sortDirection
+                nameOrDescription, idAfter, cursor, size, sortField,
+                Sort.Direction.fromString(sortDirection)
         );
         CursorPageResponseDepartmentDto response = departmentService.findAll(condition);
         return ResponseEntity.status(HttpStatus.OK).body(response);
