@@ -6,12 +6,16 @@ import com.codeit.hrbank.backup.dto.response.CursorPageResponseBackupDto;
 import com.codeit.hrbank.backup.entity.BackupHistory;
 import com.codeit.hrbank.backup.repository.BackupHistoryRepository;
 import com.codeit.hrbank.backup.type.BackupStatus;
+
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.List;
+
 import com.codeit.hrbank.changelog.repository.EmployeeChangeLogRepository;
 import com.codeit.hrbank.employee.entity.Employee;
 import com.codeit.hrbank.employee.repository.EmployeeRepository;
+import com.codeit.hrbank.file.entity.File;
+import com.codeit.hrbank.file.repository.FileRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.beans.factory.annotation.Value;
@@ -42,6 +46,7 @@ public class BackupHistoryService {
     private final BackupHistoryRepository backupHistoryRepository;
     private final EmployeeRepository employeeRepository;
     private final EmployeeChangeLogRepository employeeChangeLogRepository;
+    private final FileRepository fileRepository;
     private final BackupHistoryCreationService backupHistoryCreationService;
 
     //저장 디렉토리
@@ -78,26 +83,44 @@ public class BackupHistoryService {
         if (!isBackupNeed)
             return BackupDto.from(backupHistory);
 
-        // 백업 파일 저장 하는 로직 시작
         // 백업 파일 경로 지정
-        String fileName = DateTimeFormatter
-                .ofPattern("yyyyMMdd_HHmmss")
-                .withZone(ZoneId.systemDefault())
-                .format(backupHistory.getStartedAt()) + ".csv";
+        String fileName = createFileName(backupHistory.getStartedAt(), ".csv");
         Path backupFilePath = uploadDir.resolve("backups").resolve(fileName);
 
         // 백업 파일 저장
         try {
+            //CSV 파일 저장
             saveToCSV(backupFilePath);
-        } catch (IOException e) {
-            // 백업 파일 저장 실패 시
-//            backupHistory.fail();   //로그 파일 파라미터로 추가
-            //예외처리하기
-//            throw new RuntimeException(e);
-        }
 
-        // 백업 파일 저장 성공 시
-//        backupHistory.complete();  //파일 관련 PR 머지되면 파일 객체도 파라미터로 추가
+            //파일 객체 생성 및 저장
+            File backupFile = createFileEntity(fileName, backupFilePath);
+
+            // 백업 이력 완료로 수정
+            backupHistory.complete(backupFile);
+
+        } catch (IOException e) {
+            // 저장하던 파일 삭제
+            deleteIfExists(backupFilePath);
+
+            // 에러 로그 파일 경로 지정
+            String errorLogFileName = createFileName(backupHistory.getStartedAt(), ".log");
+            Path errorLogFilePath = uploadDir.resolve("backups").resolve("logs").resolve(errorLogFileName);
+
+            // 파일 저장
+            try {
+                //에러 로그 파일 저장
+                saveErrorLog(errorLogFilePath, e);
+
+                //파일 객체 생성 및 저장
+                File logFile = createFileEntity(errorLogFileName, errorLogFilePath);
+
+                // 백업 이력 실패로 수정
+                backupHistory.fail(logFile);
+
+            } catch (IOException exception) {
+                throw new RuntimeException("에러 로그 파일 저장에 실패했습니다");
+            }
+        }
 
         return BackupDto.from(backupHistory);
     }
@@ -246,6 +269,56 @@ public class BackupHistoryService {
                 String.valueOf(employee.getHireDate()),
                 String.valueOf(employee.getStatus())
         );
+    }
+
+    //파일 이름 생성 메서드
+    private String createFileName(Instant startedAt, String type) {
+        return DateTimeFormatter
+                .ofPattern("yyyyMMdd_HHmmss")
+                .withZone(ZoneId.systemDefault())
+                .format(startedAt) + type;
+    }
+    //파일 객체 생성 및 저장하는 메서드
+    private File createFileEntity(String fileName, Path filePath) throws IOException {
+        File file = new File(
+                fileName,
+                fileName,
+                Files.probeContentType(filePath),
+                Files.size(filePath),
+                filePath.toString()
+        );
+
+        return fileRepository.save(file);
+    }
+    // 해당 경로에 파일이 존재하면 삭제하는 메서드
+    private void deleteIfExists(Path filePath) {
+        try {
+            Files.deleteIfExists(filePath);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+    // 에러 로그 저장 메서드
+    private void saveErrorLog(Path errorLogFilePath, Exception exception) throws IOException {
+        //상위 디렉터리 없을 경우 생성
+        Path parent = errorLogFilePath.getParent();
+        if (parent != null) {
+            Files.createDirectories(parent);
+        }
+
+        // 로그 작성
+        String logContent = """
+                백업 실패 시간: %s
+                예외 타입: %s
+                예외 메시지: %s
+                """.formatted(
+                Instant.now(),
+                exception.getClass().getName(),
+                exception.getMessage()
+        );
+
+        //파일 작성
+        Files.writeString(errorLogFilePath, logContent, StandardCharsets.UTF_8);
     }
 
 }
