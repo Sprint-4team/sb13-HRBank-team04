@@ -1,12 +1,16 @@
 package com.codeit.hrbank.changelog.entity;
 
 import com.codeit.hrbank.changelog.EmployeeChangeType;
+import com.codeit.hrbank.common.BaseEntity;
+import com.codeit.hrbank.employee.entity.Employee;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,28 +18,20 @@ import java.util.List;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 @Table(name = "employee_change_logs")
-public class EmployeeChangeLog {
+public class EmployeeChangeLog extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private Instant createdAt;
-
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private EmployeeChangeType type;
 
-    @Column(name = "employee_id")
-    private Long employeeId;
-    /*
-    나중에 Employee Entity가 생기면
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "employee_id")
+    @OnDelete(action = OnDeleteAction.SET_NULL)
     private Employee employee;
-    로 대체
-     */
 
     @Column(name = "employee_number", nullable = false, length = 50)
     private String employeeNumber;
@@ -52,4 +48,20 @@ public class EmployeeChangeLog {
             orphanRemoval = true
     )
     private List<EmployeeChangeDetail> details = new ArrayList<>();
+
+    @Builder
+    private EmployeeChangeLog(
+            EmployeeChangeType type,
+            Employee employee,
+            String employeeNumber,
+            String memo,
+            String ipAddress
+    ) {
+        this.type = type;
+        this.employee = employee;
+        this.employeeNumber = employeeNumber;
+        this.memo = memo;
+        this.ipAddress = ipAddress;
+    }
+
 }
