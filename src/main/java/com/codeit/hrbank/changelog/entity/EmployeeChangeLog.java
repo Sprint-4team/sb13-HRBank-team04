@@ -1,12 +1,13 @@
 package com.codeit.hrbank.changelog.entity;
 
 import com.codeit.hrbank.changelog.EmployeeChangeType;
+import com.codeit.hrbank.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,14 +15,11 @@ import java.util.List;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 @Table(name = "employee_change_logs")
-public class EmployeeChangeLog {
+public class EmployeeChangeLog extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @Column(nullable = false)
-    private Instant createdAt;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -52,4 +50,20 @@ public class EmployeeChangeLog {
             orphanRemoval = true
     )
     private List<EmployeeChangeDetail> details = new ArrayList<>();
+
+    @Builder
+    private EmployeeChangeLog(
+            EmployeeChangeType type,
+            Long employeeId,
+            String employeeNumber,
+            String memo,
+            String ipAddress
+    ) {
+        this.type = type;
+        this.employeeId = employeeId;
+        this.employeeNumber = employeeNumber;
+        this.memo = memo;
+        this.ipAddress = ipAddress;
+    }
+
 }
