@@ -1,8 +1,6 @@
 package com.codeit.hrbank.department.service;
 
-import com.codeit.hrbank.department.dto.DepartmentCreateRequest;
-import com.codeit.hrbank.department.dto.DepartmentDto;
-import com.codeit.hrbank.department.dto.DepartmentUpdateRequest;
+import com.codeit.hrbank.department.dto.*;
 import com.codeit.hrbank.department.entity.Department;
 import com.codeit.hrbank.department.exception.DepartmentHasEmployeesException;
 import com.codeit.hrbank.department.exception.DepartmentNotFoundException;
@@ -12,6 +10,8 @@ import com.codeit.hrbank.employee.repository.EmployeeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -97,6 +97,51 @@ public class DepartmentServiceImpl implements DepartmentService {
                 department.getDescription(),
                 department.getEstablishedDate(),
                 employeeCount
+        );
+    }
+
+    @Override
+    public CursorPageResponseDepartmentDto findAll(DepartmentSearchCondition condition) {
+        int size = condition.size() > 0 ? condition.size() : 10;
+
+        List<Department> departments = departmentRepository.searchDepartments(condition);
+
+        boolean hasNext = departments.size() > size;
+        List<Department> content = hasNext ? departments.subList(0, size) : departments;
+
+        List<DepartmentDto> dtoList = content.stream()
+                .map(department -> {
+                    long employeeCount = employeeRepository.countByDepartmentId(department.getId());
+                    return new DepartmentDto(
+                            department.getId(),
+                            department.getName(),
+                            department.getDescription(),
+                            department.getEstablishedDate(),
+                            employeeCount
+                    );
+                })
+                .toList();
+
+        String nextCursor = null;
+        Long nextIdAfter = null;
+        if (hasNext && !content.isEmpty()) {
+            Department last = content.get(content.size() - 1);
+            String sortField = condition.sortField() != null ? condition.sortField() : "establishedDate";
+            nextCursor = sortField.equals("name")
+                    ? last.getName()
+                    : last.getEstablishedDate().toString();
+            nextIdAfter = last.getId();
+        }
+
+        long totalElements = departmentRepository.countDepartments(condition);
+
+        return new CursorPageResponseDepartmentDto(
+                dtoList,
+                nextCursor,
+                nextIdAfter,
+                size,
+                totalElements,
+                hasNext
         );
     }
 
