@@ -6,4 +6,7 @@ import java.util.List;
 
 public interface EmployeeRepositoryCustom {
   List<Employee> searchEmployees(EmployeeSearchCondition condition);
+
+  long countEmployees(EmployeeSearchCondition condition);
+
 }

@@ -72,11 +72,14 @@ public class EmployeeController {
     return ResponseEntity.ok(employeeService.findEmployees(condition));
   }
 
-  @PatchMapping("/{id}")
- public ResponseEntity<EmployeeDto> update(@PathVariable Long id,
-      @Valid @RequestBody EmployeeUpdateRequest request){
-    EmployeeDto update = employeeService.update(id, request);
-    return ResponseEntity.status(HttpStatus.OK).body(update);
+  @PatchMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  public ResponseEntity<EmployeeDto> update(
+      @PathVariable Long id,
+      @RequestPart("employee") @Valid EmployeeUpdateRequest request,
+      @RequestPart(value = "profile", required = false) MultipartFile profile
+  ) {
+    EmployeeDto updated = employeeService.update(id, request, profile);
+    return ResponseEntity.ok(updated);
   }
 
   @DeleteMapping("/{id}")
