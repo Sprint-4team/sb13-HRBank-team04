@@ -1,0 +1,33 @@
+package com.codeit.hrbank.attendence.dto.response;
+
+import com.codeit.hrbank.attendence.entity.Attendance;
+import com.codeit.hrbank.attendence.enums.AttendanceType;
+import java.time.LocalDate;
+
+public record AttendenceDto(
+    Long id,
+    Long employeeId,
+    String employeeName,
+    String employeeNumber,
+    String employeeEmail,
+    String departmentName,
+    LocalDate date,
+    AttendanceType type,
+    String memo
+) {
+
+  public static AttendenceDto from(Attendance attendance) {
+    return new AttendenceDto(
+        attendance.getId(),
+        attendance.getEmployee().getId(),
+        attendance.getEmployee().getName(),
+        attendance.getEmployee().getEmployeeNumber(),
+        attendance.getEmployee().getEmail(),
+        attendance.getEmployee().getDepartment().getName(),
+        attendance.getAttendanceDate(),
+        attendance.getType(),
+        attendance.getMemo()
+    );
+  }
+
+}
