@@ -49,24 +49,42 @@ public class EmployeeRepositoryImpl implements EmployeeRepositoryCustom {
         .fetch();
   }
 
+  @Override
+  public long countEmployees(EmployeeSearchCondition condition) {
+    QEmployee employee = QEmployee.employee;
+    QDepartment department = QDepartment.department;
+
+    BooleanBuilder builder = new BooleanBuilder();
+    builder.and(baseFilters(condition, employee, department));
+
+    Long count = queryFactory
+        .select(employee.count())
+        .from(employee)
+        .leftJoin(employee.department, department)
+        .where(builder)
+        .fetchOne();
+    return count != null ? count : 0L;
+  }
+
   private BooleanBuilder baseFilters(EmployeeSearchCondition condition,
       QEmployee employee, QDepartment department) {
     BooleanBuilder builder = new BooleanBuilder();
 
-    if (condition.nameOrEmail() != null) {
+    if (condition.nameOrEmail() != null && !condition.nameOrEmail().isBlank()) {
+      String keyword = condition.nameOrEmail().trim();
       builder.and(
-          employee.name.contains(condition.nameOrEmail())
-              .or(employee.email.contains(condition.nameOrEmail()))
+          employee.name.contains(keyword)
+              .or(employee.email.contains(keyword))
       );
     }
-    if (condition.departmentName() != null) {
-      builder.and(department.name.contains(condition.departmentName()));
+    if (condition.departmentName() != null && !condition.departmentName().isBlank()) {
+      builder.and(department.name.contains(condition.departmentName().trim()));
     }
-    if (condition.position() != null) {
-      builder.and(employee.position.contains(condition.position()));
+    if (condition.position() != null && !condition.position().isBlank()) {
+      builder.and(employee.position.contains(condition.position().trim()));
     }
-    if (condition.employeeNumber() != null) {
-      builder.and(employee.employeeNumber.contains(condition.employeeNumber()));
+    if (condition.employeeNumber() != null && !condition.employeeNumber().isBlank()) {
+      builder.and(employee.employeeNumber.contains(condition.employeeNumber().trim()));
     }
     if (condition.hireDateFrom() != null) {
       builder.and(employee.hireDate.goe(condition.hireDateFrom()));

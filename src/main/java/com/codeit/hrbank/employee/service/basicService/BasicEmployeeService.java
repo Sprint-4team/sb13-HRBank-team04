@@ -99,6 +99,7 @@ public class BasicEmployeeService implements EmployeeService {
         .map(EmployeeDto::from)
         .toList();
 
+
     String nextCursor = null;
     Long nextIdAfter = null;
     if (!content.isEmpty()) {
@@ -112,36 +113,47 @@ public class BasicEmployeeService implements EmployeeService {
       };
     }
 
+    long totalElements = employeeRepository.countEmployees(condition);
+
     log.info("직원 목록 조회 완료: count = {}", dtoList.size());
 
     return new CursorPageResponseEmployeeDto(
-        dtoList, nextCursor, nextIdAfter, dtoList.size(), null, hasNext
+        dtoList, nextCursor, nextIdAfter, dtoList.size(),
+        totalElements, hasNext
     );
   }
 
 
   @Override
   @Transactional
-  public EmployeeDto update(Long id, EmployeeUpdateRequest request) {
+  public EmployeeDto update(Long id, EmployeeUpdateRequest request, MultipartFile profile) {
     log.info("직원 정보 수정 요청: id = {}", id);
 
     Employee employee = employeeRepository.findById(id).orElseThrow(
         () -> new EmployeeNotFoundException(id)
-
     );
 
-    if(!employee.getEmail().equals(request.email())
-        &&employeeRepository.existsByEmail(request.email())){
+    if (!employee.getEmail().equals(request.email())
+        && employeeRepository.existsByEmail(request.email())) {
       throw new EmailDuplicateException(request.email());
-
     }
 
     Department department = departmentRepository.findById(request.departmentId())
         .orElseThrow(() -> new DepartmentNotFoundException(request.departmentId()));
 
-    employee.update(request.name(),request.email(),
-        department,request.position(),
-        request.hireDate(),request.status());
+    employee.update(request.name(), request.email(),
+        department, request.position(),
+        request.hireDate(), request.status());
+
+    if (profile != null && !profile.isEmpty()) {
+      File oldProfileImage = employee.getProfileImage();
+      File newProfileImage = fileService.createFile(profile);
+      employee.updateProfileImage(newProfileImage);
+
+      if (oldProfileImage != null) {
+        fileService.deleteFile(oldProfileImage.getId());
+      }
+    }
 
     log.info("직원 정보 수정 완료: id = {}", id);
     return EmployeeDto.from(employee);
