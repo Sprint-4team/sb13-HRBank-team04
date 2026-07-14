@@ -1,11 +1,10 @@
 package com.codeit.hrbank.department.controller;
 
-import com.codeit.hrbank.department.dto.DepartmentCreateRequest;
-import com.codeit.hrbank.department.dto.DepartmentDto;
-import com.codeit.hrbank.department.dto.DepartmentUpdateRequest;
+import com.codeit.hrbank.department.dto.*;
 import com.codeit.hrbank.department.service.DepartmentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -41,6 +40,23 @@ public class DepartmentController {
     @GetMapping("/{id}")
     public ResponseEntity<DepartmentDto> find(@PathVariable("id") Long id) {
         DepartmentDto response = departmentService.find(id);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    @GetMapping
+    public ResponseEntity<CursorPageResponseDepartmentDto> findAll(
+            @RequestParam(required = false) String nameOrDescription,
+            @RequestParam(required = false) Long idAfter,
+            @RequestParam(required = false) String cursor,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "establishedDate") String sortField,
+            @RequestParam(defaultValue = "ASC") String sortDirection
+    ) {
+        DepartmentSearchCondition condition = new DepartmentSearchCondition(
+                nameOrDescription, idAfter, cursor, size, sortField,
+                Sort.Direction.fromString(sortDirection)
+        );
+        CursorPageResponseDepartmentDto response = departmentService.findAll(condition);
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
