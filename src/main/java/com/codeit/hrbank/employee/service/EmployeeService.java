@@ -17,7 +17,7 @@ public interface EmployeeService {
   // EmployeeService
   CursorPageResponseEmployeeDto findEmployees(EmployeeSearchCondition condition);
 
-  EmployeeDto update(Long id, EmployeeUpdateRequest request);
+  EmployeeDto update(Long id, EmployeeUpdateRequest request, MultipartFile profile);
 
   void delete(Long id);
 }
