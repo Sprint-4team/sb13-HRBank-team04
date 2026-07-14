@@ -2,6 +2,7 @@ package com.codeit.hrbank.changelog.entity;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -27,5 +28,18 @@ public class EmployeeChangeDetail {
 
     @Column(columnDefinition = "TEXT")
     private String after;
+
+    @Builder
+    private EmployeeChangeDetail(
+            EmployeeChangeLog changeLog,
+            String propertyName,
+            String before,
+            String after
+    ) {
+        this.changeLog = changeLog;
+        this.propertyName = propertyName;
+        this.before = before;
+        this.after = after;
+    }
 
 }

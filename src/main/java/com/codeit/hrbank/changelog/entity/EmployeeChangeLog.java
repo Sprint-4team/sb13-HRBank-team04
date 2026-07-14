@@ -2,11 +2,14 @@ package com.codeit.hrbank.changelog.entity;
 
 import com.codeit.hrbank.changelog.EmployeeChangeType;
 import com.codeit.hrbank.common.BaseEntity;
+import com.codeit.hrbank.employee.entity.Employee;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,15 +28,10 @@ public class EmployeeChangeLog extends BaseEntity {
     @Column(nullable = false)
     private EmployeeChangeType type;
 
-    @Column(name = "employee_id")
-    private Long employeeId;
-    /*
-    나중에 Employee Entity가 생기면
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "employee_id")
+    @OnDelete(action = OnDeleteAction.SET_NULL)
     private Employee employee;
-    로 대체
-     */
 
     @Column(name = "employee_number", nullable = false, length = 50)
     private String employeeNumber;
@@ -54,13 +52,13 @@ public class EmployeeChangeLog extends BaseEntity {
     @Builder
     private EmployeeChangeLog(
             EmployeeChangeType type,
-            Long employeeId,
+            Employee employee,
             String employeeNumber,
             String memo,
             String ipAddress
     ) {
         this.type = type;
-        this.employeeId = employeeId;
+        this.employee = employee;
         this.employeeNumber = employeeNumber;
         this.memo = memo;
         this.ipAddress = ipAddress;
