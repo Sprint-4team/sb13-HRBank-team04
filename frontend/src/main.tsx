@@ -12,6 +12,7 @@ import Dashboard from "@/pages/Dashboard.tsx";
 import Department from "@/pages/Department.tsx";
 import Employee from "@/pages/Employee.tsx";
 import History from "@/pages/History";
+import Attendance from "@/pages/Attendance";
 import { ToastContainer } from "./components/common/toast/ToastContainer";
 import Layout from "./components/layout/Layout";
 
@@ -33,6 +34,10 @@ const router = createHashRouter([
       {
         path: "employees",
         element: <Employee />,
+      },
+      {
+        path: "attendances",
+        element: <Attendance />,
       },
       {
         path: "histories",

@@ -23,6 +23,11 @@ export const NAV_ITEMS = [
     icon: Users01,
   },
   {
+    label: "근태 관리",
+    path: "/attendances",
+    icon: ClockFastForward,
+  },
+  {
     label: "수정 이력",
     path: "/histories",
     icon: ClockFastForward,
