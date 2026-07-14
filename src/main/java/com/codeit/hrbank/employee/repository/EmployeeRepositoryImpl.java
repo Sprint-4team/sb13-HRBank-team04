@@ -1,0 +1,125 @@
+package com.codeit.hrbank.employee.repository;
+
+import com.codeit.hrbank.employee.dto.request.EmployeeSearchCondition;
+import com.codeit.hrbank.employee.entity.Employee;
+import com.codeit.hrbank.employee.entity.QEmployee;
+import com.codeit.hrbank.department.entity.QDepartment;
+import com.querydsl.core.BooleanBuilder;
+import com.querydsl.core.types.OrderSpecifier;
+import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.jpa.impl.JPAQueryFactory;
+import java.time.LocalDate;
+import java.util.List;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
+
+@RequiredArgsConstructor
+public class EmployeeRepositoryImpl implements EmployeeRepositoryCustom {
+
+  private final JPAQueryFactory queryFactory;
+
+  @Override
+  public List<Employee> searchEmployees(EmployeeSearchCondition condition) {
+    QEmployee employee = QEmployee.employee;
+    QDepartment department = QDepartment.department;
+
+    boolean isAsc = condition.sortDirection() == null
+        || condition.sortDirection() == Sort.Direction.ASC;
+    String sortField = condition.sortField() != null ? condition.sortField() : "name";
+
+    BooleanBuilder builder = new BooleanBuilder();
+    builder.and(baseFilters(condition, employee, department));
+
+    BooleanExpression cursorCondition = buildCursorCondition(
+        condition, employee, sortField, isAsc);
+    if (cursorCondition != null) {
+      builder.and(cursorCondition);
+    }
+
+    OrderSpecifier<?>[] orderSpecifiers = buildOrderSpecifiers(employee, sortField, isAsc);
+
+    int size = condition.size() > 0 ? condition.size() : 10;
+
+    return queryFactory
+        .selectFrom(employee)
+        .leftJoin(employee.department, department)
+        .where(builder)
+        .orderBy(orderSpecifiers)
+        .limit(size + 1L) // hasNext 판단을 위해 1개 더 조회
+        .fetch();
+  }
+
+  private BooleanBuilder baseFilters(EmployeeSearchCondition condition,
+      QEmployee employee, QDepartment department) {
+    BooleanBuilder builder = new BooleanBuilder();
+
+    if (condition.nameOrEmail() != null) {
+      builder.and(
+          employee.name.contains(condition.nameOrEmail())
+              .or(employee.email.contains(condition.nameOrEmail()))
+      );
+    }
+    if (condition.departmentName() != null) {
+      builder.and(department.name.contains(condition.departmentName()));
+    }
+    if (condition.position() != null) {
+      builder.and(employee.position.contains(condition.position()));
+    }
+    if (condition.employeeNumber() != null) {
+      builder.and(employee.employeeNumber.contains(condition.employeeNumber()));
+    }
+    if (condition.hireDateFrom() != null) {
+      builder.and(employee.hireDate.goe(condition.hireDateFrom()));
+    }
+    if (condition.hireDateTo() != null) {
+      builder.and(employee.hireDate.loe(condition.hireDateTo()));
+    }
+    if (condition.status() != null) {
+      builder.and(employee.status.eq(condition.status()));
+    }
+    return builder;
+  }
+
+  // 복합 커서: (정렬값, id) < (마지막정렬값, 마지막id) 형태
+  private BooleanExpression buildCursorCondition(EmployeeSearchCondition condition,
+      QEmployee employee, String sortField, boolean isAsc) {
+
+    if (condition.cursor() == null || condition.idAfter() == null) {
+      return null;
+    }
+
+    Long idAfter = condition.idAfter();
+    String cursor = condition.cursor();
+
+    return switch (sortField) {
+      case "hireDate" -> {
+        LocalDate lastHireDate = LocalDate.parse(cursor);
+        yield isAsc
+            ? employee.hireDate.gt(lastHireDate)
+              .or(employee.hireDate.eq(lastHireDate).and(employee.id.gt(idAfter)))
+            : employee.hireDate.lt(lastHireDate)
+              .or(employee.hireDate.eq(lastHireDate).and(employee.id.lt(idAfter)));
+      }
+      case "employeeNumber" -> isAsc
+          ? employee.employeeNumber.gt(cursor)
+            .or(employee.employeeNumber.eq(cursor).and(employee.id.gt(idAfter)))
+          : employee.employeeNumber.lt(cursor)
+            .or(employee.employeeNumber.eq(cursor).and(employee.id.lt(idAfter)));
+      default -> isAsc // name
+          ? employee.name.gt(cursor)
+            .or(employee.name.eq(cursor).and(employee.id.gt(idAfter)))
+          : employee.name.lt(cursor)
+            .or(employee.name.eq(cursor).and(employee.id.lt(idAfter)));
+    };
+  }
+
+  private OrderSpecifier<?>[] buildOrderSpecifiers(QEmployee employee, String sortField, boolean isAsc) {
+    OrderSpecifier<?> primary = switch (sortField) {
+      case "hireDate" -> isAsc ? employee.hireDate.asc() : employee.hireDate.desc();
+      case "employeeNumber" -> isAsc ? employee.employeeNumber.asc() : employee.employeeNumber.desc();
+      default -> isAsc ? employee.name.asc() : employee.name.desc();
+    };
+    OrderSpecifier<?> secondary = isAsc ? employee.id.asc() : employee.id.desc();
+    return new OrderSpecifier[]{primary, secondary};
+  }
+}
