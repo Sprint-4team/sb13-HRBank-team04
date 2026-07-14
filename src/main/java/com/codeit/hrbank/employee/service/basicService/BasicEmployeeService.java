@@ -26,6 +26,7 @@ import java.util.Objects;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -71,7 +72,17 @@ public class BasicEmployeeService implements EmployeeService {
         .profileImage(profileImage)
         .build();
 
-    Employee saved = employeeRepository.save(employee);
+    Employee saved;
+    try{
+      saved = employeeRepository.save(employee);
+      employeeRepository.flush();
+    } catch (DataIntegrityViolationException e) {
+      if(profileImage != null) {
+        fileService.deleteFile(profileImage.getId());
+      }
+
+      throw new EmailDuplicateException(request.email());
+    }
 
     // =========================
     // ChangeLog 연동 작업
@@ -174,6 +185,12 @@ public class BasicEmployeeService implements EmployeeService {
         department,request.position(),
         request.hireDate(),request.status());
 
+    try {
+      employeeRepository.flush();
+    } catch (DataIntegrityViolationException e) {
+      throw new EmailDuplicateException(request.email());
+    }
+
     if (profile != null && !profile.isEmpty()) {
       File oldProfileImage = employee.getProfileImage();
       File newProfileImage = fileService.createFile(profile);
@@ -262,23 +279,27 @@ public class BasicEmployeeService implements EmployeeService {
     Employee employee = employeeRepository.findById(id)
         .orElseThrow(() -> new EmployeeNotFoundException(id));
 
-    if (employee.getProfileImage() != null) {
-      fileService.deleteFile(employee.getProfileImage().getId());
-    }
+    Long fileId = employee.getProfileImage() != null
+        ? employee.getProfileImage().getId() : null;
 
     // =========================
     // ChangeLog 연동 작업
-    // 직원 삭제 이력 저장
+    // 직원 삭제 이력 저장 (삭제되기 전에 먼저 기록)
     changeLogService.saveChangeLog(
-            EmployeeChangeType.DELETED,
-            employee,
-            employee.getEmployeeNumber(),
-            null,
-            ipAddress,
-            List.of()
+        EmployeeChangeType.DELETED,
+        employee,
+        employee.getEmployeeNumber(),
+        null,
+        ipAddress,
+        List.of()
     ); // =========================
 
-    employeeRepository.deleteById(id);
+    employeeRepository.delete(employee);
+    employeeRepository.flush();   // employees DELETE를 먼저 확정 (FK 정합성)
+
+    if (fileId != null) {
+      fileService.deleteFile(fileId);   // 그다음 파일 삭제
+    }
 
     log.info("직원정보 삭제 완료 id = {}", id);
   }

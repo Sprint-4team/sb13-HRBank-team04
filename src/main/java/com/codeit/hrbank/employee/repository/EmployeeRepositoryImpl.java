@@ -42,7 +42,7 @@ public class EmployeeRepositoryImpl implements EmployeeRepositoryCustom {
 
     return queryFactory
         .selectFrom(employee)
-        .leftJoin(employee.department, department)
+        .leftJoin(employee.department, department).fetchJoin()
         .where(builder)
         .orderBy(orderSpecifiers)
         .limit(size + 1L) // hasNext 판단을 위해 1개 더 조회
