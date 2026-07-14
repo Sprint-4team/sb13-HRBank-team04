@@ -10,6 +10,8 @@ import com.codeit.hrbank.employee.dto.request.EmployeeSearchCondition;
 import com.codeit.hrbank.employee.dto.request.EmployeeUpdateRequest;
 import com.codeit.hrbank.employee.entity.Employee;
 import com.codeit.hrbank.employee.enums.EmployeeStatus;
+import com.codeit.hrbank.employee.exception.EmailDuplicateException;
+import com.codeit.hrbank.employee.exception.EmployeeNotFoundException;
 import com.codeit.hrbank.employee.repository.EmployeeRepository;
 import com.codeit.hrbank.employee.service.EmployeeService;
 import com.codeit.hrbank.file.entity.File;
@@ -39,7 +41,7 @@ public class BasicEmployeeService implements EmployeeService {
     log.info("직원 생성 요청: email = {}", request.email());
 
     if (employeeRepository.existsByEmail(request.email())) {
-      throw new RuntimeException("이미 존재하는 Email입니다." + request.email());
+      throw new EmailDuplicateException(request.email());
     }
 
     Department department = departmentRepository.findById(request.departmentId())
@@ -76,9 +78,8 @@ public class BasicEmployeeService implements EmployeeService {
     log.info("직원 단건 조회 요청: id = {}", id);
 
     Employee employee = employeeRepository.findById(id).orElseThrow(
-        ()
-            -> new RuntimeException("직원을 찾을 수 없습니다." + id));
-
+        () -> new EmployeeNotFoundException(id)
+    );
     log.info("직원 단건 조회 완료: id = {}", id);
     return EmployeeDto.from(employee);
   }
@@ -125,13 +126,14 @@ public class BasicEmployeeService implements EmployeeService {
     log.info("직원 정보 수정 요청: id = {}", id);
 
     Employee employee = employeeRepository.findById(id).orElseThrow(
-        () -> new NoSuchElementException("직원을 찾을 수 없습니다." + id)
+        () -> new EmployeeNotFoundException(id)
 
     );
 
     if(!employee.getEmail().equals(request.email())
         &&employeeRepository.existsByEmail(request.email())){
-        throw new RuntimeException("이미 사용중인 Email 입니다.");
+      throw new EmailDuplicateException(request.email());
+
     }
 
     Department department = departmentRepository.findById(request.departmentId())
@@ -152,7 +154,7 @@ public class BasicEmployeeService implements EmployeeService {
     log.info("직원정보 삭제 요청 id = {}", id);
 
     Employee employee = employeeRepository.findById(id)
-        .orElseThrow(() -> new NoSuchElementException("해당 id의 직원을 찾지 못했습니다." + id));
+        .orElseThrow(() -> new EmployeeNotFoundException(id));
 
     if (employee.getProfileImage() != null) {
       fileService.deleteFile(employee.getProfileImage().getId());
