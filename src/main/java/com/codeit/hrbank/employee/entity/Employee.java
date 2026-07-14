@@ -1,40 +1,28 @@
 package com.codeit.hrbank.employee.entity;
 
+import com.codeit.hrbank.common.BaseEntity;
 import com.codeit.hrbank.department.entity.Department;
 import com.codeit.hrbank.employee.enums.EmployeeStatus;
 import com.codeit.hrbank.file.entity.File;
 import jakarta.persistence.*;
-import java.time.Instant;
 import java.time.LocalDate;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Entity
 @Table(name = "employees")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-@EntityListeners(AuditingEntityListener.class)
 @Builder
-public class Employee {
+public class Employee extends BaseEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
-
-  @Column(name = "created_at", nullable = false, updatable = false)
-  @CreatedDate
-  private Instant createdAt;
-
-  @Column(name = "updated_at")
-  @LastModifiedDate
-  private Instant updatedAt;
 
   @Column(name = "name", nullable = false, length = 100)
   private String name;
