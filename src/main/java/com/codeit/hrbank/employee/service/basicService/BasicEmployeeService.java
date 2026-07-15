@@ -1,5 +1,8 @@
 package com.codeit.hrbank.employee.service.basicService;
 
+import com.codeit.hrbank.changelog.EmployeeChangeType;
+import com.codeit.hrbank.changelog.dto.DiffDto;
+import com.codeit.hrbank.changelog.service.ChangeLogService;
 import com.codeit.hrbank.department.entity.Department;
 import com.codeit.hrbank.department.exception.DepartmentNotFoundException;
 import com.codeit.hrbank.department.repository.DepartmentRepository;
@@ -17,8 +20,10 @@ import com.codeit.hrbank.employee.service.EmployeeService;
 import com.codeit.hrbank.file.entity.File;
 import com.codeit.hrbank.file.service.FileService;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.NoSuchElementException;
+import java.util.Objects;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -33,11 +38,12 @@ public class BasicEmployeeService implements EmployeeService {
   private final EmployeeRepository employeeRepository;
   private final DepartmentRepository departmentRepository;
   private final FileService fileService;
+  private final ChangeLogService changeLogService;
 
 
   @Override
   @Transactional
-  public EmployeeDto createEmployee(EmployeeCreateRequest request, MultipartFile profile) {
+  public EmployeeDto createEmployee(EmployeeCreateRequest request, MultipartFile profile, String ipAddress) {
     log.info("직원 생성 요청: email = {}", request.email());
 
     if (employeeRepository.existsByEmail(request.email())) {
@@ -66,6 +72,18 @@ public class BasicEmployeeService implements EmployeeService {
         .build();
 
     Employee saved = employeeRepository.save(employee);
+
+    // =========================
+    // ChangeLog 연동 작업
+    // 직원 생성 이력 저장
+    changeLogService.saveChangeLog(
+            EmployeeChangeType.CREATED,
+            saved,
+            saved.getEmployeeNumber(),
+            request.memo(),
+            ipAddress,
+            List.of()
+    ); // =========================
 
     log.info("직원 생성 완료: id={}, employeeNumber={}", saved.getId(), employeeNumber);
     return EmployeeDto.from(saved);
@@ -99,6 +117,7 @@ public class BasicEmployeeService implements EmployeeService {
         .map(EmployeeDto::from)
         .toList();
 
+
     String nextCursor = null;
     Long nextIdAfter = null;
     if (!content.isEmpty()) {
@@ -112,36 +131,123 @@ public class BasicEmployeeService implements EmployeeService {
       };
     }
 
+    long totalElements = employeeRepository.countEmployees(condition);
+
     log.info("직원 목록 조회 완료: count = {}", dtoList.size());
 
     return new CursorPageResponseEmployeeDto(
-        dtoList, nextCursor, nextIdAfter, dtoList.size(), null, hasNext
+        dtoList, nextCursor, nextIdAfter, dtoList.size(),
+        totalElements, hasNext
     );
   }
 
 
   @Override
   @Transactional
-  public EmployeeDto update(Long id, EmployeeUpdateRequest request) {
+  public EmployeeDto update(Long id, EmployeeUpdateRequest request, MultipartFile profile, String ipAddress) {
     log.info("직원 정보 수정 요청: id = {}", id);
 
     Employee employee = employeeRepository.findById(id).orElseThrow(
         () -> new EmployeeNotFoundException(id)
-
     );
 
-    if(!employee.getEmail().equals(request.email())
-        &&employeeRepository.existsByEmail(request.email())){
+    if (!employee.getEmail().equals(request.email())
+        && employeeRepository.existsByEmail(request.email())) {
       throw new EmailDuplicateException(request.email());
-
     }
 
     Department department = departmentRepository.findById(request.departmentId())
         .orElseThrow(() -> new DepartmentNotFoundException(request.departmentId()));
 
+    // =========================
+    // ChangeLog 연동 작업 시작
+    // 수정 전(before) 값 저장
+    String beforeName = employee.getName();
+    String beforeEmail = employee.getEmail();
+    String beforePosition = employee.getPosition();
+    Long beforeDepartmentId = employee.getDepartment().getId();
+    LocalDate beforeHireDate = employee.getHireDate();
+    EmployeeStatus beforeStatus = employee.getStatus();
+    // =========================
+
     employee.update(request.name(),request.email(),
         department,request.position(),
         request.hireDate(),request.status());
+
+    if (profile != null && !profile.isEmpty()) {
+      File oldProfileImage = employee.getProfileImage();
+      File newProfileImage = fileService.createFile(profile);
+      employee.updateProfileImage(newProfileImage);
+
+      if (oldProfileImage != null) {
+        fileService.deleteFile(oldProfileImage.getId());
+      }
+    }
+
+    // =========================
+    // ChangeLog 연동 작업
+    // 변경된 필드(before/after) 비교
+    List<DiffDto> diffs = new ArrayList<>();
+
+    if (!Objects.equals(beforeName, employee.getName())) {
+      diffs.add(new DiffDto(
+              "name",
+              beforeName,
+              employee.getName()
+      ));
+    }
+
+    if (!Objects.equals(beforeEmail, employee.getEmail())) {
+      diffs.add(new DiffDto(
+              "email",
+              beforeEmail,
+              employee.getEmail()
+      ));
+    }
+
+    if (!Objects.equals(beforePosition, employee.getPosition())) {
+      diffs.add(new DiffDto(
+              "position",
+              beforePosition,
+              employee.getPosition()
+      ));
+    }
+
+    if (!Objects.equals(beforeDepartmentId, employee.getDepartment().getId())) {
+      diffs.add(new DiffDto(
+              "department",
+              String.valueOf(beforeDepartmentId),
+              String.valueOf(employee.getDepartment().getId())
+      ));
+    }
+
+    if (!Objects.equals(beforeHireDate, employee.getHireDate())) {
+      diffs.add(new DiffDto(
+              "hireDate",
+              beforeHireDate.toString(),
+              employee.getHireDate().toString()
+      ));
+    }
+
+    if (!Objects.equals(beforeStatus, employee.getStatus())) {
+      diffs.add(new DiffDto(
+              "status",
+              beforeStatus.name(),
+              employee.getStatus().name()
+      ));
+    } // =========================
+
+    // =========================
+    // ChangeLog 연동 작업
+    // 직원 수정 이력 저장
+    changeLogService.saveChangeLog(
+            EmployeeChangeType.UPDATED,
+            employee,
+            employee.getEmployeeNumber(),
+            request.memo(),
+            ipAddress,
+            diffs
+    ); // =========================
 
     log.info("직원 정보 수정 완료: id = {}", id);
     return EmployeeDto.from(employee);
@@ -150,7 +256,7 @@ public class BasicEmployeeService implements EmployeeService {
 
   @Override
   @Transactional
-  public void delete(Long id) {
+  public void delete(Long id, String ipAddress) {
     log.info("직원정보 삭제 요청 id = {}", id);
 
     Employee employee = employeeRepository.findById(id)
@@ -160,7 +266,17 @@ public class BasicEmployeeService implements EmployeeService {
       fileService.deleteFile(employee.getProfileImage().getId());
     }
 
-    // TODO: 삭제 이력(DELETED) 기록 - 이력 연동 시
+    // =========================
+    // ChangeLog 연동 작업
+    // 직원 삭제 이력 저장
+    changeLogService.saveChangeLog(
+            EmployeeChangeType.DELETED,
+            employee,
+            employee.getEmployeeNumber(),
+            null,
+            ipAddress,
+            List.of()
+    ); // =========================
 
     employeeRepository.deleteById(id);
 

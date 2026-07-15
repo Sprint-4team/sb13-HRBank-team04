@@ -13,6 +13,7 @@ import org.springframework.data.repository.query.Param;
 public interface BackupHistoryRepository extends JpaRepository<BackupHistory, Long> {
 
     Optional<BackupHistory> findTopByStatusOrderByStartedAtDesc(BackupStatus status);
+    boolean existsByStatus(BackupStatus status);
 
     @Query("""
             select b

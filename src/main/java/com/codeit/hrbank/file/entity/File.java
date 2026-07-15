@@ -23,11 +23,11 @@ public class File {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY) // 숫자 자동 증가
-  private Long id; // profileImageId
+  private Long id;
 
   @CreatedDate
   @Column(name = "created_at", nullable = false, updatable = false)
-  Instant createdAt;
+  private Instant createdAt; // private 접근 제어자 추가
 
   @Column(name = "original_file_name", nullable = false, length = 255)
   private String originalFileName;

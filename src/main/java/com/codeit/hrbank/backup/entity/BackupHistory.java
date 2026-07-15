@@ -65,4 +65,11 @@ public class BackupHistory extends BaseEntity {
         this.file = file;
     }
 
+    //백업 파일 저장 시도에서 실패하고, 실패 로그 파일을 저장하려는 것도 실패했을 경우
+    public void fail() {
+        this.endedAt = Instant.now();
+        this.status = BackupStatus.FAILED;
+        this.file = null;
+    }
+
 }
