@@ -6,6 +6,7 @@ import com.codeit.hrbank.backup.dto.response.CursorPageResponseBackupDto;
 import com.codeit.hrbank.backup.entity.BackupHistory;
 import com.codeit.hrbank.backup.exception.BackupAlreadyInProgressException;
 import com.codeit.hrbank.backup.exception.BackupHistoryNotFoundException;
+import com.codeit.hrbank.backup.exception.InvalidBackupSearchConditionException;
 import com.codeit.hrbank.backup.repository.BackupHistoryRepository;
 import com.codeit.hrbank.backup.type.BackupStatus;
 
@@ -149,6 +150,7 @@ public class BackupHistoryService {
     // 백업 이력 목록을 조회, 커서 페이지 응답 DTO반환
     @Transactional(readOnly = true)
     public CursorPageResponseBackupDto findBackupHistories(BackupSearchCondition condition) {
+        validateSearchCondition(condition);
         int pageSize = normalizePageSize(condition.size());
         Instant cursorStartedAt = parseCursorStartedAt(condition.cursor());
 
@@ -233,6 +235,26 @@ public class BackupHistoryService {
         return Math.min(requestedSize, MAX_PAGE_SIZE);
     }
 
+    private void validateSearchCondition(BackupSearchCondition condition) {
+        if (condition.startedAtFrom() != null && condition.startedAtTo() != null
+                && condition.startedAtFrom().isAfter(condition.startedAtTo())) {
+            throw new InvalidBackupSearchConditionException(
+                    "startedAtFrom은 startedAtTo보다 늦을 수 없습니다.");
+        }
+
+        if (condition.sortField() != null
+                && !List.of("startedAt", "endedAt", "status").contains(condition.sortField())) {
+            throw new InvalidBackupSearchConditionException(
+                    "지원하지 않는 정렬 필드입니다: " + condition.sortField());
+        }
+
+        boolean hasCursor = condition.cursor() != null && !condition.cursor().isBlank();
+        if (hasCursor != (condition.idAfter() != null)) {
+            throw new InvalidBackupSearchConditionException(
+                    "cursor와 idAfter는 함께 제공해야 합니다.");
+        }
+    }
+
     // cursor는 마지막으로 조회한 백업 이력의 startedAt 값.
     private Instant parseCursorStartedAt(String cursor) {
         if (cursor == null || cursor.isBlank()) {
@@ -242,7 +264,7 @@ public class BackupHistoryService {
         try {
             return Instant.parse(cursor);
         } catch (DateTimeParseException e) {
-            throw new IllegalArgumentException("커서 : " + cursor, e);
+            throw new InvalidBackupSearchConditionException("잘못된 커서 형식입니다: " + cursor);
         }
     }
 
