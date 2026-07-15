@@ -4,6 +4,7 @@ import com.codeit.hrbank.backup.dto.request.BackupSearchCondition;
 import com.codeit.hrbank.backup.dto.response.BackupDto;
 import com.codeit.hrbank.backup.dto.response.CursorPageResponseBackupDto;
 import com.codeit.hrbank.backup.entity.BackupHistory;
+import com.codeit.hrbank.backup.exception.BackupHistoryNotFoundException;
 import com.codeit.hrbank.backup.repository.BackupHistoryRepository;
 import com.codeit.hrbank.backup.type.BackupStatus;
 
@@ -17,6 +18,7 @@ import com.codeit.hrbank.employee.repository.EmployeeRepository;
 import com.codeit.hrbank.file.entity.File;
 import com.codeit.hrbank.file.repository.FileRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -36,6 +38,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class BackupHistoryService {
@@ -77,7 +80,7 @@ public class BackupHistoryService {
 
         // 생성된 백업 이력 조회
         BackupHistory backupHistory = backupHistoryRepository.findById(backupHistoryId)
-                .orElseThrow(() -> new RuntimeException("방금 막 생성한 백업 정보가 없습니다."));
+                .orElseThrow(() -> new BackupHistoryNotFoundException(backupHistoryId));
 
         // 백업 skip 시 프로세스 종료
         if (!isBackupNeed)
@@ -100,7 +103,12 @@ public class BackupHistoryService {
 
         } catch (IOException e) {
             // 저장하던 파일 삭제
-            deleteIfExists(backupFilePath);
+            try {
+                deleteIfExists(backupFilePath);
+            } catch (IOException deleteException) {
+                // 여기서 발생한 예외를 기존 예외에 추가
+                e.addSuppressed(deleteException);
+            }
 
             // 에러 로그 파일 경로 지정
             String errorLogFileName = createFileName(backupHistory.getStartedAt(), ".log");
@@ -118,7 +126,14 @@ public class BackupHistoryService {
                 backupHistory.fail(logFile);
 
             } catch (IOException exception) {
-                throw new RuntimeException("에러 로그 파일 저장에 실패했습니다");
+                //에러 로그 파일을 저장하려는 것도 실패
+                backupHistory.fail();
+
+                // 여기서 발생한 예외를 기존 예외에 추가
+                exception.addSuppressed(e);
+
+                //최후의 최후에는 예외 던지면 IN_PROGRESS 상태 백업 기록만 남고 실패 상태가 트랜잭션 롤백되므로, 로그를 남겨서 트랜잭션 커밋시키도록 구현
+                log.error("백업 작업 실패 후 에러 로그 파일 저장에도 실패했습니다. backupHistoryId: {}", backupHistory.getId(), exception);
             }
         }
 
@@ -285,19 +300,17 @@ public class BackupHistoryService {
                 fileName,
                 contentType,
                 Files.size(filePath),
-                // Todo 파일 저장 경로 회의하고 결정하기 (절대경로? 상대경로?)
-//                filePath.toString()       //상대경로
-                filePath.toAbsolutePath().normalize().toString()        //절대경로
+                filePath.toAbsolutePath().normalize().toString()
         );
 
         return fileRepository.save(file);
     }
     // 해당 경로에 파일이 존재하면 삭제하는 메서드
-    private void deleteIfExists(Path filePath) {
+    private void deleteIfExists(Path filePath) throws IOException {
         try {
             Files.deleteIfExists(filePath);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new IOException("저장 중이던 백업 파일 삭제에 실패했습니다. filePath: " + filePath, e);
         }
     }
     // 에러 로그 저장 메서드
