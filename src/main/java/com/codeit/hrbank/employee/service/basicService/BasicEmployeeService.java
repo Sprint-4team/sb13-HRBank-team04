@@ -7,7 +7,9 @@ import com.codeit.hrbank.department.entity.Department;
 import com.codeit.hrbank.department.exception.DepartmentNotFoundException;
 import com.codeit.hrbank.department.repository.DepartmentRepository;
 import com.codeit.hrbank.employee.dto.CursorPageResponseEmployeeDto;
+import com.codeit.hrbank.employee.dto.EmployeeDistributionDto;
 import com.codeit.hrbank.employee.dto.EmployeeDto;
+import com.codeit.hrbank.employee.dto.EmployeeTrendDto;
 import com.codeit.hrbank.employee.dto.request.EmployeeCreateRequest;
 import com.codeit.hrbank.employee.dto.request.EmployeeSearchCondition;
 import com.codeit.hrbank.employee.dto.request.EmployeeUpdateRequest;
@@ -322,4 +324,90 @@ public class BasicEmployeeService implements EmployeeService {
     return prefix + String.format("%04d", nextSequence);
 
   }
+
+  @Override
+  @Transactional(readOnly = true)
+  public long countEmployees(EmployeeStatus status, LocalDate fromDate, LocalDate toDate) {
+    log.info("직원 수 조회 요청: status = {}, fromDate = {}, toDate = {}", status, fromDate, toDate);
+
+    long count = employeeRepository.countByCondition(status, fromDate, toDate);
+
+    log.info("직원 수 조회 완료: count = {}", count);
+    return count;
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public List<EmployeeDistributionDto> getDistribution(String groupBy, EmployeeStatus status) {
+    log.info("직원 분포 조회 요청: groupBy = {}, status = {}", groupBy, status);
+
+    String appliedGroupBy = (groupBy == null || groupBy.isBlank()) ? "department" : groupBy;
+    EmployeeStatus appliedStatus = status != null ? status : EmployeeStatus.ACTIVE;
+
+    return employeeRepository.countGroupByField(appliedGroupBy, appliedStatus);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public List<EmployeeTrendDto> getTrend(LocalDate from, LocalDate to, String unit) {
+    log.info("직원 수 추이 조회 요청: from = {}, to = {}, unit = {}", from, to, unit);
+
+    String appliedUnit = (unit == null || unit.isBlank()) ? "month" : unit;
+    LocalDate appliedTo = to != null ? to : LocalDate.now();
+    LocalDate appliedFrom = from != null
+        ? from : subtractUnits(appliedTo, appliedUnit, 11);
+                           // to를 포함해 총 12구간이 나오도록, 시작점은 11구간 이전으로 잡음
+
+    // 구간 끝 날짜들을 appliedFrom ~ appliedTo 범위에서, appliedTo를 기준으로 역산해 생성
+    List<LocalDate> bucketEnds = new ArrayList<>();
+    LocalDate cursor = appliedTo;
+    while (!cursor.isBefore(appliedFrom)) {
+      bucketEnds.add(0, cursor);
+      cursor = stepBack(cursor, appliedUnit);
+    }
+
+    // 첫 구간의 변화율 계산을 위해, 범위 시작 이전 시점의 count도 미리 구함
+    LocalDate beforeFirst = stepBack(bucketEnds.get(0), appliedUnit);
+    long prevCount = employeeRepository.countHiredBefore(beforeFirst);
+
+    List<EmployeeTrendDto> result = new ArrayList<>();
+    for (LocalDate bucketEnd : bucketEnds) {
+      long count = employeeRepository.countHiredBefore(bucketEnd);
+      long change = count - prevCount;
+      double changeRate = prevCount > 0
+          ? Math.round((change * 10000.0 / prevCount)) / 100.0
+          : 0.0;
+
+      result.add(new EmployeeTrendDto(bucketEnd.toString(), count, change, changeRate));
+      prevCount = count;
+    }
+
+    log.info("직원 수 추이 조회 완료: size = {}", result.size());
+    return result;
+  }
+
+  // --- 헬퍼----
+
+  // --- 헬퍼: unit에 따라 날짜를 한 구간만큼 뒤로 이동 ---
+  private LocalDate stepBack(LocalDate date, String unit) {
+    return switch (unit) {
+      case "day" -> date.minusDays(1);
+      case "week" -> date.minusWeeks(1);
+      case "quarter" -> date.minusMonths(3);
+      case "year" -> date.minusYears(1);
+      default -> date.minusMonths(1); // month
+    };
+  }
+
+  // --- 헬퍼: 기준일로부터 unit * count 만큼 이전 날짜 ---
+  private LocalDate subtractUnits(LocalDate date, String unit, int count) {
+    return switch (unit) {
+      case "day" -> date.minusDays(count);
+      case "week" -> date.minusWeeks(count);
+      case "quarter" -> date.minusMonths(count * 3L);
+      case "year" -> date.minusYears(count);
+      default -> date.minusMonths(count); // month
+    };
+  }
+
 }

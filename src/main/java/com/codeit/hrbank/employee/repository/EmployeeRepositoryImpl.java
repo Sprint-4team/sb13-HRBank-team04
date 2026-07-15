@@ -1,9 +1,11 @@
 package com.codeit.hrbank.employee.repository;
 
+import com.codeit.hrbank.employee.dto.EmployeeDistributionDto;
 import com.codeit.hrbank.employee.dto.request.EmployeeSearchCondition;
 import com.codeit.hrbank.employee.entity.Employee;
 import com.codeit.hrbank.employee.entity.QEmployee;
 import com.codeit.hrbank.department.entity.QDepartment;
+import com.codeit.hrbank.employee.enums.EmployeeStatus;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.BooleanExpression;
@@ -63,6 +65,81 @@ public class EmployeeRepositoryImpl implements EmployeeRepositoryCustom {
         .leftJoin(employee.department, department)
         .where(builder)
         .fetchOne();
+    return count != null ? count : 0L;
+  }
+
+  @Override
+  public long countByCondition(EmployeeStatus status, LocalDate fromDate, LocalDate toDate) {
+    QEmployee employee = QEmployee.employee;
+    BooleanBuilder builder = new BooleanBuilder();
+
+    if (status != null) {
+      builder.and(employee.status.eq(status));
+    }
+    if (fromDate != null) {
+      builder.and(employee.hireDate.goe(fromDate));
+    }
+    if (toDate != null) {
+      builder.and(employee.hireDate.loe(toDate));
+    }
+
+    Long count = queryFactory
+        .select(employee.count())
+        .from(employee)
+        .where(builder)
+        .fetchOne();
+
+    return count != null ? count : 0L;
+  }
+
+  @Override
+  public List<EmployeeDistributionDto> countGroupByField(String groupBy, EmployeeStatus status) {
+    QEmployee employee = QEmployee.employee;
+    QDepartment department = QDepartment.department;
+
+    BooleanBuilder builder =new BooleanBuilder();
+    if(status != null) {
+      builder.and(employee.status.eq(status));
+    }
+
+    var groupExpr = "position".equalsIgnoreCase(groupBy)
+        ? employee.position
+        : department.name;
+    List<com.querydsl.core.Tuple> results = queryFactory
+        .select(groupExpr, employee.count())
+        .from(employee)
+        .leftJoin(employee.department, department)
+        .where(builder)
+        .groupBy(groupExpr)
+        .fetch();
+
+    long total = results.stream()
+        .mapToLong(t -> t.get(employee.count()))
+        .sum();
+
+    return results.stream()
+        .map(t -> {String key = t.get(groupExpr);
+        Long count = t.get(employee.count());
+
+        double percentage = total > 0
+        ? Math.round((count * 10000.0 / total )) / 100.0 : 0.0;
+
+        return new EmployeeDistributionDto(key, count, percentage);
+        })
+        .toList();
+
+  }
+
+  @Override
+  public long countHiredBefore(LocalDate asOfDate) {
+    QEmployee employee = QEmployee.employee;
+
+    Long count = queryFactory
+        .select(employee.count())
+        .from(employee)
+        .where(employee.hireDate.loe(asOfDate))
+        .fetchOne();
+
     return count != null ? count : 0L;
   }
 
