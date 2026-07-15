@@ -6,9 +6,11 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+@Getter
 @Component
 public class LocalFileStorage {
   // 파일 서비스는 비즈니스 로직만 담당하도록 분리
@@ -28,9 +30,4 @@ public class LocalFileStorage {
       throw new FileStorageException(uploadPath); // 커스텀 예외로 처리
     }
   }
-
-  public Path getUploadPath() {
-    return uploadPath;
-  }
-
 }
