@@ -1,13 +1,12 @@
 package com.codeit.hrbank.changelog.repository;
 
-import com.codeit.hrbank.changelog.EmployeeChangeType;
 import com.codeit.hrbank.changelog.entity.EmployeeChangeLog;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.Instant;
-import java.util.List;
 
 public interface EmployeeChangeLogRepository extends JpaRepository<EmployeeChangeLog, Long>, EmployeeChangeLogRepositoryCustom {
 
@@ -15,4 +14,16 @@ public interface EmployeeChangeLogRepository extends JpaRepository<EmployeeChang
 
     boolean existsByCreatedAtAfter(Instant createdAt);
 
+    @Modifying(
+            flushAutomatically = true,
+            clearAutomatically = true
+    )
+    @Query("""
+        UPDATE EmployeeChangeLog c
+        SET c.employee = null
+        WHERE c.employee.id = :employeeId
+        """)
+    int clearEmployeeReference(
+            @Param("employeeId") Long employeeId
+    );
 }
