@@ -2,6 +2,7 @@ package com.codeit.hrbank.employee.service.basicService;
 
 import com.codeit.hrbank.changelog.EmployeeChangeType;
 import com.codeit.hrbank.changelog.dto.DiffDto;
+import com.codeit.hrbank.changelog.dto.EmployeeStatusChangeDto;
 import com.codeit.hrbank.changelog.service.ChangeLogService;
 import com.codeit.hrbank.department.entity.Department;
 import com.codeit.hrbank.department.exception.DepartmentNotFoundException;
@@ -21,11 +22,16 @@ import com.codeit.hrbank.employee.repository.EmployeeRepository;
 import com.codeit.hrbank.employee.service.EmployeeService;
 import com.codeit.hrbank.file.entity.File;
 import com.codeit.hrbank.file.service.FileService;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -86,9 +92,7 @@ public class BasicEmployeeService implements EmployeeService {
       throw new EmailDuplicateException(request.email());
     }
 
-    // =========================
-    // ChangeLog 연동 작업
-    // 직원 생성 이력 저장
+    // ───────────── ChangeLog 연동: 직원 생성 이력 ─────────────
     changeLogService.saveChangeLog(
             EmployeeChangeType.CREATED,
             saved,
@@ -96,7 +100,8 @@ public class BasicEmployeeService implements EmployeeService {
             request.memo(),
             ipAddress,
             List.of()
-    ); // =========================
+    );
+    // ─────────────────────────────────────────────────────────
 
     log.info("직원 생성 완료: id={}, employeeNumber={}", saved.getId(), employeeNumber);
     return EmployeeDto.from(saved);
@@ -172,16 +177,18 @@ public class BasicEmployeeService implements EmployeeService {
     Department department = departmentRepository.findById(request.departmentId())
         .orElseThrow(() -> new DepartmentNotFoundException(request.departmentId()));
 
-    // =========================
-    // ChangeLog 연동 작업 시작
-    // 수정 전(before) 값 저장
+    // ───────────── ChangeLog 연동: 수정 전 값 저장 ─────────────
     String beforeName = employee.getName();
     String beforeEmail = employee.getEmail();
     String beforePosition = employee.getPosition();
     Long beforeDepartmentId = employee.getDepartment().getId();
     LocalDate beforeHireDate = employee.getHireDate();
     EmployeeStatus beforeStatus = employee.getStatus();
-    // =========================
+
+    Long beforeProfileImageId = employee.getProfileImage() == null
+            ? null
+            : employee.getProfileImage().getId();
+    // ─────────────────────────────────────────────────────────
 
     employee.update(request.name(),request.email(),
         department,request.position(),
@@ -203,9 +210,11 @@ public class BasicEmployeeService implements EmployeeService {
       }
     }
 
-    // =========================
-    // ChangeLog 연동 작업
-    // 변경된 필드(before/after) 비교
+    // ───────────── ChangeLog 연동: 변경 상세 및 수정 이력 ─────────────
+    Long afterProfileImageId = employee.getProfileImage() == null
+            ? null
+            : employee.getProfileImage().getId();
+
     List<DiffDto> diffs = new ArrayList<>();
 
     if (!Objects.equals(beforeName, employee.getName())) {
@@ -254,11 +263,20 @@ public class BasicEmployeeService implements EmployeeService {
               beforeStatus.name(),
               employee.getStatus().name()
       ));
-    } // =========================
+    }
 
-    // =========================
-    // ChangeLog 연동 작업
-    // 직원 수정 이력 저장
+    if (!Objects.equals(beforeProfileImageId, afterProfileImageId)) {
+      diffs.add(new DiffDto(
+              "profileImage",
+              beforeProfileImageId == null
+                      ? null
+                      : beforeProfileImageId.toString(),
+              afterProfileImageId == null
+                      ? null
+                      : afterProfileImageId.toString()
+      ));
+    }
+
     changeLogService.saveChangeLog(
             EmployeeChangeType.UPDATED,
             employee,
@@ -266,7 +284,8 @@ public class BasicEmployeeService implements EmployeeService {
             request.memo(),
             ipAddress,
             diffs
-    ); // =========================
+    );
+    // ───────────────────────────────────────────────────────────────
 
     log.info("직원 정보 수정 완료: id = {}", id);
     return EmployeeDto.from(employee);
@@ -284,6 +303,7 @@ public class BasicEmployeeService implements EmployeeService {
     Long fileId = employee.getProfileImage() != null
         ? employee.getProfileImage().getId() : null;
 
+    // ───────────── ChangeLog 연동: 직원 삭제 이력 ─────────────
     changeLogService.saveChangeLog(
         EmployeeChangeType.DELETED,
         employee,
@@ -295,6 +315,7 @@ public class BasicEmployeeService implements EmployeeService {
     employeeRepository.flush();   // ChangeLog INSERT 확정
 
     changeLogService.clearEmployeeReference(id);
+    // ─────────────────────────────────────────────────────────
 
     Employee target = employeeRepository.findById(id)
         .orElseThrow(() -> new EmployeeNotFoundException(id));
@@ -356,9 +377,8 @@ public class BasicEmployeeService implements EmployeeService {
     LocalDate appliedTo = to != null ? to : LocalDate.now();
     LocalDate appliedFrom = from != null
         ? from : subtractUnits(appliedTo, appliedUnit, 11);
-                           // to를 포함해 총 12구간이 나오도록, 시작점은 11구간 이전으로 잡음
 
-    // 구간 끝 날짜들을 appliedFrom ~ appliedTo 범위에서, appliedTo를 기준으로 역산해 생성
+    // 구간 끝 날짜들 생성 (기존과 동일)
     List<LocalDate> bucketEnds = new ArrayList<>();
     LocalDate cursor = appliedTo;
     while (!cursor.isBefore(appliedFrom)) {
@@ -366,13 +386,18 @@ public class BasicEmployeeService implements EmployeeService {
       cursor = stepBack(cursor, appliedUnit);
     }
 
-    // 첫 구간의 변화율 계산을 위해, 범위 시작 이전 시점의 count도 미리 구함
-    LocalDate beforeFirst = stepBack(bucketEnds.get(0), appliedUnit);
-    long prevCount = employeeRepository.countHiredBefore(beforeFirst);
+    // 전체 직원(입사일 기준 후보 판단용)과 상태 변경 이력을 미리 가져옴
+    List<Employee> allEmployees = employeeRepository.findAll();
+    Map<Long, List<EmployeeStatusChangeDto>> changesByEmployee =
+        changeLogService.findEmployeeStatusChanges().stream()
+            .collect(Collectors.groupingBy(EmployeeStatusChangeDto::employeeId));
+
+    long prevCount = countActiveAsOf(
+        stepBack(bucketEnds.get(0), appliedUnit), allEmployees, changesByEmployee);
 
     List<EmployeeTrendDto> result = new ArrayList<>();
     for (LocalDate bucketEnd : bucketEnds) {
-      long count = employeeRepository.countHiredBefore(bucketEnd);
+      long count = countActiveAsOf(bucketEnd, allEmployees, changesByEmployee);
       long change = count - prevCount;
       double changeRate = prevCount > 0
           ? Math.round((change * 10000.0 / prevCount)) / 100.0
@@ -386,6 +411,45 @@ public class BasicEmployeeService implements EmployeeService {
     return result;
   }
 
+  // --- 헬퍼: 특정 기준일(asOfDate) 시점에 재직 중(ACTIVE/ON_LEAVE)이던 직원 수 계산 ---
+  private long countActiveAsOf(
+      LocalDate asOfDate,
+      List<Employee> allEmployees,
+      Map<Long, List<EmployeeStatusChangeDto>> changesByEmployee
+  ) {
+    // 그 날짜가 끝나는 시점(다음날 자정) 이전에 일어난 변경만 인정
+    Instant cutoff = asOfDate.plusDays(1)
+        .atStartOfDay(ZoneId.systemDefault())
+        .toInstant();
+
+    long count = 0;
+    for (Employee employee : allEmployees) {
+      // 입사일이 기준일 이후면 아직 존재하지 않는 직원이므로 제외
+      if (employee.getHireDate().isAfter(asOfDate)) {
+        continue;
+      }
+
+      List<EmployeeStatusChangeDto> changes = changesByEmployee.get(employee.getId());
+      EmployeeStatus statusAsOf = EmployeeStatus.ACTIVE; // 이력 없으면 최초 상태
+
+      if (changes != null) {
+        EmployeeStatusChangeDto lastChange = changes.stream()
+            .filter(c -> c.changedAt().isBefore(cutoff))
+            .max(Comparator.comparing(EmployeeStatusChangeDto::changedAt))
+            .orElse(null);
+
+        if (lastChange != null) {
+          statusAsOf = lastChange.afterStatus();
+        }
+      }
+
+      if (statusAsOf != EmployeeStatus.RESIGNED) {
+        count++;
+      }
+    }
+
+    return count;
+  }
   // --- 헬퍼----
 
   // --- 헬퍼: unit에 따라 날짜를 한 구간만큼 뒤로 이동 ---

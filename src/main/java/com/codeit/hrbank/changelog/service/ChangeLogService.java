@@ -4,6 +4,8 @@ import com.codeit.hrbank.changelog.EmployeeChangeType;
 import com.codeit.hrbank.changelog.dto.ChangeLogDetailDto;
 import com.codeit.hrbank.changelog.dto.CursorPageResponseChangeLogDto;
 import com.codeit.hrbank.changelog.dto.DiffDto;
+import com.codeit.hrbank.changelog.dto.EmployeeStatusChangeDto;
+import com.codeit.hrbank.changelog.dto.request.ChangeLogSearchCondition;
 import com.codeit.hrbank.employee.entity.Employee;
 
 import java.time.Instant;
@@ -12,17 +14,7 @@ import java.util.List;
 public interface ChangeLogService {
 
     CursorPageResponseChangeLogDto findChangeLogs(
-            String employeeNumber,
-            EmployeeChangeType type,
-            String memo,
-            String ipAddress,
-            Instant atFrom,
-            Instant atTo,
-            Long idAfter,
-            String cursor,
-            Integer size,
-            String sortField,
-            String sortDirection
+            ChangeLogSearchCondition condition
     );
 
     ChangeLogDetailDto findChangeLogDetail(Long id);
@@ -31,6 +23,8 @@ public interface ChangeLogService {
             Instant fromDate,
             Instant toDate
     );
+
+    List<EmployeeStatusChangeDto> findEmployeeStatusChanges();
 
     void saveChangeLog(
             EmployeeChangeType type,
