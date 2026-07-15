@@ -4,6 +4,7 @@ import com.codeit.hrbank.backup.dto.request.BackupSearchCondition;
 import com.codeit.hrbank.backup.dto.response.BackupDto;
 import com.codeit.hrbank.backup.dto.response.CursorPageResponseBackupDto;
 import com.codeit.hrbank.backup.entity.BackupHistory;
+import com.codeit.hrbank.backup.exception.BackupAlreadyInProgressException;
 import com.codeit.hrbank.backup.exception.BackupHistoryNotFoundException;
 import com.codeit.hrbank.backup.repository.BackupHistoryRepository;
 import com.codeit.hrbank.backup.type.BackupStatus;
@@ -62,6 +63,11 @@ public class BackupHistoryService {
 
     @Transactional
     public BackupDto createBackupHistory(String worker) {
+        //이미 진행 중인 백업이 존재하면 예외 발생
+        if (backupHistoryRepository.existsByStatus(BackupStatus.IN_PROGRESS)) {
+            throw new BackupAlreadyInProgressException();
+        }
+
         // status가 COMPLETED인 가장 최근 백업 정보 검색
         Optional<BackupHistory> lastBackupHistory = backupHistoryRepository.findTopByStatusOrderByStartedAtDesc(BackupStatus.COMPLETED);
 
