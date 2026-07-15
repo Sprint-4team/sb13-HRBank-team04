@@ -16,6 +16,4 @@ public interface EmployeeRepositoryCustom {
 
   List<EmployeeDistributionDto> countGroupByField(String groupBy, EmployeeStatus status);
 
-  long countHiredBefore(LocalDate asOfDate);
-
 }
