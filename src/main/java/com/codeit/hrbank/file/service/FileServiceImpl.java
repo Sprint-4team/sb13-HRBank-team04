@@ -3,6 +3,7 @@ package com.codeit.hrbank.file.service;
 import com.codeit.hrbank.file.exception.FileNotFoundException;
 import com.codeit.hrbank.file.exception.FileStorageException;
 import com.codeit.hrbank.file.entity.File;
+import com.codeit.hrbank.file.exception.InvalidFileException;
 import com.codeit.hrbank.file.repository.FileRepository;
 import com.codeit.hrbank.file.storage.LocalFileStorage;
 import java.io.IOException;
@@ -34,7 +35,7 @@ public class FileServiceImpl implements FileService {
   @Transactional
   public File createFile(MultipartFile file){
     if (file == null || file.isEmpty()) {
-      throw new FileNotFoundException();
+      throw new InvalidFileException(); // 빈 파일은 사용자의 잘못된 요청이므로 분리해 처리
     }
 
     // 원본 파일명 정규화한 뒤 확장자 추출
@@ -77,7 +78,7 @@ public class FileServiceImpl implements FileService {
 
   // id -> 파일 다운로드
   public Resource downloadFile(Long id) {
-    File file = findFile(id);
+    File file = findFile(id); // TODO: findFile 반복 문제 해결
     Path requested = Paths.get(file.getPath()).normalize(); // DB -> path -> 파일 접근
     if (!requested.startsWith(localFileStorage.getUploadPath())){
       log.warn("다운로드 요청 거부: {}", id);

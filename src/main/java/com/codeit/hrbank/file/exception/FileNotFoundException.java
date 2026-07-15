@@ -8,7 +8,4 @@ public class FileNotFoundException extends BusinessException {
   public FileNotFoundException(Long id) {
     super(HttpStatus.NOT_FOUND, "파일을 찾을 수 없습니다.: "+ id);
   }
-  public FileNotFoundException() {
-    super(HttpStatus.NOT_FOUND, "파일이 비어 있습니다.");
-  }
 }
