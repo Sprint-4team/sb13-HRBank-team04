@@ -1,10 +1,7 @@
 package com.codeit.hrbank.changelog.service;
 
 import com.codeit.hrbank.changelog.EmployeeChangeType;
-import com.codeit.hrbank.changelog.dto.ChangeLogDetailDto;
-import com.codeit.hrbank.changelog.dto.ChangeLogDto;
-import com.codeit.hrbank.changelog.dto.CursorPageResponseChangeLogDto;
-import com.codeit.hrbank.changelog.dto.DiffDto;
+import com.codeit.hrbank.changelog.dto.*;
 import com.codeit.hrbank.changelog.dto.request.ChangeLogSearchCondition;
 import com.codeit.hrbank.changelog.entity.EmployeeChangeDetail;
 import com.codeit.hrbank.changelog.entity.EmployeeChangeLog;
@@ -13,6 +10,7 @@ import com.codeit.hrbank.changelog.exception.InvalidChangeLogSearchConditionExce
 import com.codeit.hrbank.changelog.repository.EmployeeChangeDetailRepository;
 import com.codeit.hrbank.changelog.repository.EmployeeChangeLogRepository;
 import com.codeit.hrbank.employee.entity.Employee;
+import com.codeit.hrbank.employee.enums.EmployeeStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -201,6 +199,27 @@ public class ChangeLogServiceImpl implements ChangeLogService{
             );
         }
         return employeeChangeLogRepository.countByCreatedAtBetween(fromDate, toDate);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<EmployeeStatusChangeDto> findEmployeeStatusChanges() {
+        return employeeChangeDetailRepository
+                .findEmployeeStatusChangesForExistingEmployees()
+                .stream()
+                .map(detail -> {
+                    EmployeeChangeLog changeLog = detail.getChangeLog();
+                    Employee employee = changeLog.getEmployee();
+
+                    return new EmployeeStatusChangeDto(
+                            employee.getId(),
+                            changeLog.getEmployeeNumber(),
+                            EmployeeStatus.valueOf(detail.getBefore()),
+                            EmployeeStatus.valueOf(detail.getAfter()),
+                            changeLog.getCreatedAt()
+                    );
+                })
+                .toList();
     }
 
     @Override

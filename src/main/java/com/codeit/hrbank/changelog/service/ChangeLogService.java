@@ -4,6 +4,7 @@ import com.codeit.hrbank.changelog.EmployeeChangeType;
 import com.codeit.hrbank.changelog.dto.ChangeLogDetailDto;
 import com.codeit.hrbank.changelog.dto.CursorPageResponseChangeLogDto;
 import com.codeit.hrbank.changelog.dto.DiffDto;
+import com.codeit.hrbank.changelog.dto.EmployeeStatusChangeDto;
 import com.codeit.hrbank.changelog.dto.request.ChangeLogSearchCondition;
 import com.codeit.hrbank.employee.entity.Employee;
 
@@ -22,6 +23,8 @@ public interface ChangeLogService {
             Instant fromDate,
             Instant toDate
     );
+
+    List<EmployeeStatusChangeDto> findEmployeeStatusChanges();
 
     void saveChangeLog(
             EmployeeChangeType type,
