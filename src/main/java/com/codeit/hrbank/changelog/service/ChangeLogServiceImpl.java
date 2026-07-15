@@ -279,4 +279,10 @@ public class ChangeLogServiceImpl implements ChangeLogService{
         );
     }
 
+    @Override
+    @Transactional
+    public void clearEmployeeReference(Long employeeId) {
+        employeeChangeLogRepository.clearEmployeeReference(employeeId);
+    }
+
 }

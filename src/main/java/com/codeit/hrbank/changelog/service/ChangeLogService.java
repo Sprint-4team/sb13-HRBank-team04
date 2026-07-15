@@ -40,4 +40,6 @@ public interface ChangeLogService {
             String ipAddress,
             List<DiffDto> diffs
     );
+
+    void clearEmployeeReference(Long employeeId);
 }
