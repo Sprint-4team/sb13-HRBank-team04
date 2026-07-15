@@ -137,7 +137,8 @@ public class EmployeeRepositoryImpl implements EmployeeRepositoryCustom {
     Long count = queryFactory
         .select(employee.count())
         .from(employee)
-        .where(employee.hireDate.loe(asOfDate))
+        .where(employee.hireDate.loe(asOfDate),
+            employee.status.ne(EmployeeStatus.RESIGNED))
         .fetchOne();
 
     return count != null ? count : 0L;
