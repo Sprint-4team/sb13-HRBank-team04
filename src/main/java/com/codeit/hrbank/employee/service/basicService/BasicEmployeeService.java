@@ -282,9 +282,6 @@ public class BasicEmployeeService implements EmployeeService {
     Long fileId = employee.getProfileImage() != null
         ? employee.getProfileImage().getId() : null;
 
-    // =========================
-    // ChangeLog 연동 작업
-    // 직원 삭제 이력 저장 (삭제되기 전에 먼저 기록)
     changeLogService.saveChangeLog(
         EmployeeChangeType.DELETED,
         employee,
@@ -292,13 +289,20 @@ public class BasicEmployeeService implements EmployeeService {
         null,
         ipAddress,
         List.of()
-    ); // =========================
+    );
+    employeeRepository.flush();   // ChangeLog INSERT 확정
 
-    employeeRepository.delete(employee);
-    employeeRepository.flush();   // employees DELETE를 먼저 확정 (FK 정합성)
+    changeLogService.clearEmployeeReference(id);
 
+    Employee target = employeeRepository.findById(id)
+        .orElseThrow(() -> new EmployeeNotFoundException(id));
+
+    employeeRepository.delete(target);
+    employeeRepository.flush();
+
+    // 4. 파일 삭제
     if (fileId != null) {
-      fileService.deleteFile(fileId);   // 그다음 파일 삭제
+      fileService.deleteFile(fileId);
     }
 
     log.info("직원정보 삭제 완료 id = {}", id);
