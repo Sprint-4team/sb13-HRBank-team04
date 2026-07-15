@@ -1,15 +1,16 @@
 package com.codeit.hrbank.changelog.service;
 
 import com.codeit.hrbank.changelog.EmployeeChangeType;
-import com.codeit.hrbank.changelog.dto.ChangeLogDetailDto;
-import com.codeit.hrbank.changelog.dto.ChangeLogDto;
-import com.codeit.hrbank.changelog.dto.CursorPageResponseChangeLogDto;
-import com.codeit.hrbank.changelog.dto.DiffDto;
+import com.codeit.hrbank.changelog.dto.*;
+import com.codeit.hrbank.changelog.dto.request.ChangeLogSearchCondition;
 import com.codeit.hrbank.changelog.entity.EmployeeChangeDetail;
 import com.codeit.hrbank.changelog.entity.EmployeeChangeLog;
+import com.codeit.hrbank.changelog.exception.ChangeLogNotFoundException;
+import com.codeit.hrbank.changelog.exception.InvalidChangeLogSearchConditionException;
 import com.codeit.hrbank.changelog.repository.EmployeeChangeDetailRepository;
 import com.codeit.hrbank.changelog.repository.EmployeeChangeLogRepository;
 import com.codeit.hrbank.employee.entity.Employee;
+import com.codeit.hrbank.employee.enums.EmployeeStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,44 +30,34 @@ public class ChangeLogServiceImpl implements ChangeLogService{
     @Override
     @Transactional(readOnly = true)
     public CursorPageResponseChangeLogDto findChangeLogs(
-            String employeeNumber,
-            EmployeeChangeType type,
-            String memo,
-            String ipAddress,
-            Instant atFrom,
-            Instant atTo,
-            Long idAfter,
-            String cursor,
-            Integer size,
-            String sortField,
-            String sortDirection
+            ChangeLogSearchCondition condition
     ) {
-        int pageSize = size == null ? 10 : size;
+        int pageSize = condition.size() == null
+                ? 10
+                : condition.size();
 
         if (pageSize < 1) {
-            throw new IllegalArgumentException(
+            throw new InvalidChangeLogSearchConditionException(
                     "size는 1 이상이어야 합니다."
             );
         }
 
-        String appliedSortField = resolveSortField(sortField);
+        String appliedSortField =
+                resolveSortField(condition.sortField());
+
         String appliedSortDirection =
-                resolveSortDirection(sortDirection);
-
+                resolveSortDirection(condition.sortDirection());
         /*
-         * 종료 시각을 먼저 확정하고,
-         * 시작 시각이 없으면 종료 시각 기준 7일 전으로 설정합니다.
+         * 목록 조회는 요청된 날짜 범위만 적용합니다.
+         * 날짜가 없으면 기간 조건을 적용하지 않습니다.
          */
-        Instant toDate = atTo == null
-                ? Instant.now()
-                : atTo;
+        Instant fromDate = condition.atFrom();
+        Instant toDate = condition.atTo();
 
-        Instant fromDate = atFrom == null
-                ? toDate.minus(7, ChronoUnit.DAYS)
-                : atFrom;
-
-        if (fromDate.isAfter(toDate)) {
-            throw new IllegalArgumentException(
+        if (fromDate != null
+                && toDate != null
+                && fromDate.isAfter(toDate)) {
+            throw new InvalidChangeLogSearchConditionException(
                     "atFrom은 atTo보다 이후일 수 없습니다."
             );
         }
@@ -77,14 +68,14 @@ public class ChangeLogServiceImpl implements ChangeLogService{
          */
         List<EmployeeChangeLog> fetchedChangeLogs =
                 employeeChangeLogRepository.findChangeLogs(
-                        employeeNumber,
-                        type,
-                        memo,
-                        ipAddress,
+                        condition.employeeNumber(),
+                        condition.type(),
+                        condition.memo(),
+                        condition.ipAddress(),
                         fromDate,
                         toDate,
-                        idAfter,
-                        cursor,
+                        condition.idAfter(),
+                        condition.cursor(),
                         pageSize,
                         appliedSortField,
                         appliedSortDirection
@@ -135,10 +126,10 @@ public class ChangeLogServiceImpl implements ChangeLogService{
 
         long totalElements =
                 employeeChangeLogRepository.countChangeLogs(
-                        employeeNumber,
-                        type,
-                        memo,
-                        ipAddress,
+                        condition.employeeNumber(),
+                        condition.type(),
+                        condition.memo(),
+                        condition.ipAddress(),
                         fromDate,
                         toDate
                 );
@@ -158,7 +149,7 @@ public class ChangeLogServiceImpl implements ChangeLogService{
     @Transactional(readOnly = true)
     public ChangeLogDetailDto findChangeLogDetail(Long id) {
         EmployeeChangeLog changeLog = employeeChangeLogRepository.findById(id)
-                .orElseThrow(); // 예외 클래스로 추후 수정
+                .orElseThrow(() -> new ChangeLogNotFoundException(id));
         List<EmployeeChangeDetail> details =
                 employeeChangeDetailRepository.findByChangeLogId(id);
         List<DiffDto> diffs = details.stream()
@@ -202,7 +193,33 @@ public class ChangeLogServiceImpl implements ChangeLogService{
         if (fromDate == null) {
             fromDate = toDate.minus(7, ChronoUnit.DAYS);
         }
+        if (fromDate.isAfter(toDate)) {
+            throw new InvalidChangeLogSearchConditionException(
+                    "fromDate는 toDate보다 이후일 수 없습니다."
+            );
+        }
         return employeeChangeLogRepository.countByCreatedAtBetween(fromDate, toDate);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<EmployeeStatusChangeDto> findEmployeeStatusChanges() {
+        return employeeChangeDetailRepository
+                .findEmployeeStatusChangesForExistingEmployees()
+                .stream()
+                .map(detail -> {
+                    EmployeeChangeLog changeLog = detail.getChangeLog();
+                    Employee employee = changeLog.getEmployee();
+
+                    return new EmployeeStatusChangeDto(
+                            employee.getId(),
+                            changeLog.getEmployeeNumber(),
+                            EmployeeStatus.valueOf(detail.getBefore()),
+                            EmployeeStatus.valueOf(detail.getAfter()),
+                            changeLog.getCreatedAt()
+                    );
+                })
+                .toList();
     }
 
     @Override
@@ -215,7 +232,6 @@ public class ChangeLogServiceImpl implements ChangeLogService{
             String ipAddress,
             List<DiffDto> diffs
     ) {
-        // TODO: 직원 생성/수정/삭제 시 호출
         // EmployeeChangeLog 저장
         // EmployeeChangeDetail 저장
         EmployeeChangeLog changeLog = EmployeeChangeLog.builder()
@@ -253,7 +269,7 @@ public class ChangeLogServiceImpl implements ChangeLogService{
             return "ipAddress";
         }
 
-        throw new IllegalArgumentException(
+        throw new InvalidChangeLogSearchConditionException(
                 "sortField는 at 또는 ipAddress만 가능합니다."
         );
     }
@@ -274,7 +290,7 @@ public class ChangeLogServiceImpl implements ChangeLogService{
             return "desc";
         }
 
-        throw new IllegalArgumentException(
+        throw new InvalidChangeLogSearchConditionException(
                 "sortDirection은 asc 또는 desc만 가능합니다."
         );
     }

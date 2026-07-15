@@ -86,9 +86,7 @@ public class BasicEmployeeService implements EmployeeService {
       throw new EmailDuplicateException(request.email());
     }
 
-    // =========================
-    // ChangeLog 연동 작업
-    // 직원 생성 이력 저장
+    // ───────────── ChangeLog 연동: 직원 생성 이력 ─────────────
     changeLogService.saveChangeLog(
             EmployeeChangeType.CREATED,
             saved,
@@ -96,7 +94,8 @@ public class BasicEmployeeService implements EmployeeService {
             request.memo(),
             ipAddress,
             List.of()
-    ); // =========================
+    );
+    // ─────────────────────────────────────────────────────────
 
     log.info("직원 생성 완료: id={}, employeeNumber={}", saved.getId(), employeeNumber);
     return EmployeeDto.from(saved);
@@ -172,16 +171,18 @@ public class BasicEmployeeService implements EmployeeService {
     Department department = departmentRepository.findById(request.departmentId())
         .orElseThrow(() -> new DepartmentNotFoundException(request.departmentId()));
 
-    // =========================
-    // ChangeLog 연동 작업 시작
-    // 수정 전(before) 값 저장
+    // ───────────── ChangeLog 연동: 수정 전 값 저장 ─────────────
     String beforeName = employee.getName();
     String beforeEmail = employee.getEmail();
     String beforePosition = employee.getPosition();
     Long beforeDepartmentId = employee.getDepartment().getId();
     LocalDate beforeHireDate = employee.getHireDate();
     EmployeeStatus beforeStatus = employee.getStatus();
-    // =========================
+
+    Long beforeProfileImageId = employee.getProfileImage() == null
+            ? null
+            : employee.getProfileImage().getId();
+    // ─────────────────────────────────────────────────────────
 
     employee.update(request.name(),request.email(),
         department,request.position(),
@@ -203,9 +204,11 @@ public class BasicEmployeeService implements EmployeeService {
       }
     }
 
-    // =========================
-    // ChangeLog 연동 작업
-    // 변경된 필드(before/after) 비교
+    // ───────────── ChangeLog 연동: 변경 상세 및 수정 이력 ─────────────
+    Long afterProfileImageId = employee.getProfileImage() == null
+            ? null
+            : employee.getProfileImage().getId();
+
     List<DiffDto> diffs = new ArrayList<>();
 
     if (!Objects.equals(beforeName, employee.getName())) {
@@ -254,11 +257,20 @@ public class BasicEmployeeService implements EmployeeService {
               beforeStatus.name(),
               employee.getStatus().name()
       ));
-    } // =========================
+    }
 
-    // =========================
-    // ChangeLog 연동 작업
-    // 직원 수정 이력 저장
+    if (!Objects.equals(beforeProfileImageId, afterProfileImageId)) {
+      diffs.add(new DiffDto(
+              "profileImage",
+              beforeProfileImageId == null
+                      ? null
+                      : beforeProfileImageId.toString(),
+              afterProfileImageId == null
+                      ? null
+                      : afterProfileImageId.toString()
+      ));
+    }
+
     changeLogService.saveChangeLog(
             EmployeeChangeType.UPDATED,
             employee,
@@ -266,7 +278,8 @@ public class BasicEmployeeService implements EmployeeService {
             request.memo(),
             ipAddress,
             diffs
-    ); // =========================
+    );
+    // ───────────────────────────────────────────────────────────────
 
     log.info("직원 정보 수정 완료: id = {}", id);
     return EmployeeDto.from(employee);
@@ -284,6 +297,7 @@ public class BasicEmployeeService implements EmployeeService {
     Long fileId = employee.getProfileImage() != null
         ? employee.getProfileImage().getId() : null;
 
+    // ───────────── ChangeLog 연동: 직원 삭제 이력 ─────────────
     changeLogService.saveChangeLog(
         EmployeeChangeType.DELETED,
         employee,
@@ -295,6 +309,7 @@ public class BasicEmployeeService implements EmployeeService {
     employeeRepository.flush();   // ChangeLog INSERT 확정
 
     changeLogService.clearEmployeeReference(id);
+    // ─────────────────────────────────────────────────────────
 
     Employee target = employeeRepository.findById(id)
         .orElseThrow(() -> new EmployeeNotFoundException(id));

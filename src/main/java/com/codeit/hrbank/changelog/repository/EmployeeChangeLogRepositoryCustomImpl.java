@@ -3,6 +3,7 @@ package com.codeit.hrbank.changelog.repository;
 import com.codeit.hrbank.changelog.EmployeeChangeType;
 import com.codeit.hrbank.changelog.entity.EmployeeChangeLog;
 import com.codeit.hrbank.changelog.entity.QEmployeeChangeLog;
+import com.codeit.hrbank.changelog.exception.InvalidChangeLogSearchConditionException;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.BooleanExpression;
@@ -272,10 +273,9 @@ public class EmployeeChangeLogRepositoryCustomImpl
         try {
             return Instant.parse(cursor);
         } catch (DateTimeParseException exception) {
-            throw new IllegalArgumentException(
+            throw new InvalidChangeLogSearchConditionException(
                     "at 정렬 cursor는 ISO-8601 형식이어야 합니다. cursor: "
-                            + cursor,
-                    exception
+                            + cursor
             );
         }
     }
