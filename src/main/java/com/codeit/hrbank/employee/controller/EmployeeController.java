@@ -1,7 +1,9 @@
 package com.codeit.hrbank.employee.controller;
 
 import com.codeit.hrbank.employee.dto.CursorPageResponseEmployeeDto;
+import com.codeit.hrbank.employee.dto.EmployeeDistributionDto;
 import com.codeit.hrbank.employee.dto.EmployeeDto;
+import com.codeit.hrbank.employee.dto.EmployeeTrendDto;
 import com.codeit.hrbank.employee.dto.request.EmployeeCreateRequest;
 import com.codeit.hrbank.employee.dto.request.EmployeeSearchCondition;
 import com.codeit.hrbank.employee.dto.request.EmployeeUpdateRequest;
@@ -11,6 +13,7 @@ import com.codeit.hrbank.global.util.CommonUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
@@ -74,6 +77,36 @@ public class EmployeeController {
 
     return ResponseEntity.ok(employeeService.findEmployees(condition));
   }
+
+  @GetMapping("/count")
+  public ResponseEntity<Long> countEmployees(
+      @RequestParam(required = false) EmployeeStatus status,
+      @RequestParam(required = false) LocalDate fromDate,
+      @RequestParam(required = false) LocalDate toDate
+  ) {
+    long count = employeeService.countEmployees(status, fromDate, toDate);
+    return ResponseEntity.status(HttpStatus.OK).body(count);
+  }
+
+  @GetMapping("/stats/distribution")
+  public ResponseEntity<List<EmployeeDistributionDto>> getDistribution(
+      @RequestParam(defaultValue = "department") String groupBy,
+      @RequestParam(required = false) EmployeeStatus status
+  ) {
+    List<EmployeeDistributionDto> distribution = employeeService.getDistribution(groupBy, status);
+    return ResponseEntity.status(HttpStatus.OK).body(distribution);
+  }
+
+  @GetMapping("/stats/trend")
+  public ResponseEntity<List<EmployeeTrendDto>> getTrend(
+      @RequestParam(required = false) LocalDate from,
+      @RequestParam(required = false) LocalDate to,
+      @RequestParam(defaultValue = "month") String unit
+  ){
+    List<EmployeeTrendDto> trend = employeeService.getTrend(from, to, unit);
+    return ResponseEntity.status(HttpStatus.OK).body(trend);
+  }
+
 
   @PatchMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public ResponseEntity<EmployeeDto> update(
