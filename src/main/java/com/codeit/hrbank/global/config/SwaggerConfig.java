@@ -10,7 +10,7 @@ import org.springframework.context.annotation.Configuration;
 public class SwaggerConfig {
 
   @Bean
-  public OpenAPI discodeitOpenAPI() {
+  public OpenAPI hrbankOpenAPI() {
     return new OpenAPI()
         .info(new Info()
             .title("4팀 포그라운드 HR Bank API.")
