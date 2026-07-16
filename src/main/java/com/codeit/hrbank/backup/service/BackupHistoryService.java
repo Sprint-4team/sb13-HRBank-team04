@@ -11,6 +11,7 @@ import com.codeit.hrbank.backup.repository.BackupHistoryRepository;
 import com.codeit.hrbank.backup.type.BackupStatus;
 
 import java.time.Instant;
+import java.time.LocalTime;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 
@@ -47,6 +48,7 @@ public class BackupHistoryService {
 
     private static final int DEFAULT_PAGE_SIZE = 10;
     private static final int MAX_PAGE_SIZE = 100;
+    private static final ZoneId FRONTEND_TIME_ZONE = ZoneId.of("Asia/Seoul");
 
     private final BackupHistoryRepository backupHistoryRepository;
     private final EmployeeRepository employeeRepository;
@@ -153,9 +155,17 @@ public class BackupHistoryService {
         validateSearchCondition(condition);
         int pageSize = normalizePageSize(condition.size());
         Instant cursorStartedAt = parseCursorStartedAt(condition.cursor());
+        Instant startedAtFrom = condition.startedAtFrom();
+        Instant startedAtTo = resolveInclusiveEndDate(condition.startedAtTo());
 
         //size+1 건 조회, 1건 더 있을 시 hasnext true
-        List<BackupHistory> fetchedHistories = findPageHistories(condition, cursorStartedAt, pageSize);
+        List<BackupHistory> fetchedHistories = findPageHistories(
+                condition,
+                startedAtFrom,
+                startedAtTo,
+                cursorStartedAt,
+                pageSize
+        );
 
         boolean hasNext = fetchedHistories.size() > pageSize;
         List<BackupHistory> pageHistories = hasNext
@@ -169,8 +179,8 @@ public class BackupHistoryService {
         long totalElements = backupHistoryRepository.countHistories(
                 condition.worker(),
                 condition.status(),
-                condition.startedAtFrom(),
-                condition.startedAtTo()
+                startedAtFrom,
+                startedAtTo
         );
 
         if (pageHistories.isEmpty()) {
@@ -200,6 +210,8 @@ public class BackupHistoryService {
 
     private List<BackupHistory> findPageHistories(
             BackupSearchCondition condition,
+            Instant startedAtFrom,
+            Instant startedAtTo,
             Instant cursorStartedAt,
             int pageSize
     ) {
@@ -209,8 +221,8 @@ public class BackupHistoryService {
             return backupHistoryRepository.findHistories(
                     condition.worker(),
                     condition.status(),
-                    condition.startedAtFrom(),
-                    condition.startedAtTo(),
+                    startedAtFrom,
+                    startedAtTo,
                     pageRequest
             );
         }
@@ -218,8 +230,8 @@ public class BackupHistoryService {
         return backupHistoryRepository.findHistoriesAfter(
                 condition.worker(),
                 condition.status(),
-                condition.startedAtFrom(),
-                condition.startedAtTo(),
+                startedAtFrom,
+                startedAtTo,
                 cursorStartedAt,
                 condition.idAfter(),
                 pageRequest
@@ -233,6 +245,27 @@ public class BackupHistoryService {
         }
 
         return Math.min(requestedSize, MAX_PAGE_SIZE);
+    }
+
+    private Instant resolveInclusiveEndDate(Instant startedAtTo) {
+        if (startedAtTo == null) {
+            return null;
+        }
+
+        boolean isStartOfDay = startedAtTo
+                .atZone(FRONTEND_TIME_ZONE)
+                .toLocalTime()
+                .equals(LocalTime.MIDNIGHT);
+
+        if (!isStartOfDay) {
+            return startedAtTo;
+        }
+
+        return startedAtTo
+                .atZone(FRONTEND_TIME_ZONE)
+                .plusDays(1)
+                .minusNanos(1)
+                .toInstant();
     }
 
     private void validateSearchCondition(BackupSearchCondition condition) {
