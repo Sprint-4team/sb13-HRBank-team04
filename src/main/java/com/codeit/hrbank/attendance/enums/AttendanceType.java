@@ -1,4 +1,4 @@
-package com.codeit.hrbank.attendence.enums;
+package com.codeit.hrbank.attendance.enums;
 
 public enum AttendanceType {
   LATE("지각"),

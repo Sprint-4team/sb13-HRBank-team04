@@ -1,14 +1,14 @@
-package com.codeit.hrbank.attendence.repository;
+package com.codeit.hrbank.attendance.repository;
 
-import com.codeit.hrbank.attendence.entity.Attendance;
-import com.codeit.hrbank.attendence.enums.AttendanceType;
+import com.codeit.hrbank.attendance.entity.Attendance;
+import com.codeit.hrbank.attendance.enums.AttendanceType;
 import java.time.LocalDate;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-public interface AttendenceRepository extends JpaRepository<Attendance, Long> {
+public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
 
   @Query("""
       SELECT a FROM Attendance a
