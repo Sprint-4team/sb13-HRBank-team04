@@ -4,7 +4,7 @@ import com.codeit.hrbank.attendence.entity.Attendance;
 import com.codeit.hrbank.attendence.enums.AttendanceType;
 import java.time.LocalDate;
 
-public record AttendenceDto(
+public record AttendanceDto(
     Long id,
     Long employeeId,
     String employeeName,
@@ -16,8 +16,8 @@ public record AttendenceDto(
     String memo
 ) {
 
-  public static AttendenceDto from(Attendance attendance) {
-    return new AttendenceDto(
+  public static AttendanceDto from(Attendance attendance) {
+    return new AttendanceDto(
         attendance.getId(),
         attendance.getEmployee().getId(),
         attendance.getEmployee().getName(),

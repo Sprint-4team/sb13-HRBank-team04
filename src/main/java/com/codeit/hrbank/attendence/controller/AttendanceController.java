@@ -1,8 +1,8 @@
 package com.codeit.hrbank.attendence.controller;
 
-import com.codeit.hrbank.attendence.dto.request.CreateAttendenceRequest;
-import com.codeit.hrbank.attendence.dto.response.AttendenceDto;
-import com.codeit.hrbank.attendence.service.AttendenceService;
+import com.codeit.hrbank.attendence.dto.request.CreateAttendanceRequest;
+import com.codeit.hrbank.attendence.dto.response.AttendanceDto;
+import com.codeit.hrbank.attendence.service.AttendanceService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -31,24 +31,24 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 @RequestMapping("/api/attendances")
 @Tag(name = "Attendance", description = "직원 출결 관리 API")
-public class AttendenceController {
+public class AttendanceController {
 
-  private final AttendenceService attendenceService;
+  private final AttendanceService attendanceService;
 
   @GetMapping
   @Operation(summary = "출결 목록 조회", description = "지정한 기간의 출결 기록을 조회합니다.")
   @ApiResponses({
       @ApiResponse(responseCode = "200", description = "조회 성공",
-          content = @Content(array = @ArraySchema(schema = @Schema(implementation = AttendenceDto.class)))),
+          content = @Content(array = @ArraySchema(schema = @Schema(implementation = AttendanceDto.class)))),
       @ApiResponse(responseCode = "400", description = "잘못된 날짜 형식 또는 조회 기간", content = @Content)
   })
-  public ResponseEntity<List<AttendenceDto>> findAttendences(
+  public ResponseEntity<List<AttendanceDto>> findAttendences(
       @Parameter(description = "조회 시작일", required = true)
       @RequestParam LocalDate startDate,
       @Parameter(description = "조회 종료일", required = true)
       @RequestParam LocalDate endDate
   ) {
-    return ResponseEntity.ok(attendenceService.findAttendences(startDate, endDate));
+    return ResponseEntity.ok(attendanceService.findAttendences(startDate, endDate));
   }
 
   @PostMapping
@@ -59,10 +59,10 @@ public class AttendenceController {
       @ApiResponse(responseCode = "404", description = "직원을 찾을 수 없음", content = @Content),
       @ApiResponse(responseCode = "409", description = "중복된 출결 기록", content = @Content)
   })
-  public ResponseEntity<AttendenceDto> createAttendence(
-      @Valid @RequestBody CreateAttendenceRequest request
+  public ResponseEntity<AttendanceDto> createAttendence(
+      @Valid @RequestBody CreateAttendanceRequest request
   ) {
-    AttendenceDto created = attendenceService.createAttendence(request);
+    AttendanceDto created = attendanceService.createAttendence(request);
     return ResponseEntity.status(HttpStatus.CREATED).body(created);
   }
 
@@ -74,11 +74,11 @@ public class AttendenceController {
       @ApiResponse(responseCode = "404", description = "출결 기록 또는 직원을 찾을 수 없음", content = @Content),
       @ApiResponse(responseCode = "409", description = "중복된 출결 기록", content = @Content)
   })
-  public ResponseEntity<AttendenceDto> updateAttendence(
+  public ResponseEntity<AttendanceDto> updateAttendence(
       @Parameter(description = "출결 ID", required = true) @PathVariable Long id,
-      @Valid @RequestBody CreateAttendenceRequest request
+      @Valid @RequestBody CreateAttendanceRequest request
   ) {
-    return ResponseEntity.ok(attendenceService.updateAttendence(id, request));
+    return ResponseEntity.ok(attendanceService.updateAttendence(id, request));
   }
 
   @DeleteMapping("/{id}")
@@ -89,7 +89,7 @@ public class AttendenceController {
   })
   public ResponseEntity<Void> deleteAttendence(
       @Parameter(description = "출결 ID", required = true) @PathVariable Long id) {
-    attendenceService.deleteAttendence(id);
+    attendanceService.deleteAttendence(id);
     return ResponseEntity.noContent().build();
   }
 }
