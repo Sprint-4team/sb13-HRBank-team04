@@ -1,9 +1,9 @@
-package com.codeit.hrbank.attendence.service;
+package com.codeit.hrbank.attendance.service;
 
-import com.codeit.hrbank.attendence.dto.request.CreateAttendanceRequest;
-import com.codeit.hrbank.attendence.dto.response.AttendanceDto;
-import com.codeit.hrbank.attendence.entity.Attendance;
-import com.codeit.hrbank.attendence.repository.AttendanceRepository;
+import com.codeit.hrbank.attendance.dto.request.CreateAttendanceRequest;
+import com.codeit.hrbank.attendance.dto.response.AttendanceDto;
+import com.codeit.hrbank.attendance.entity.Attendance;
+import com.codeit.hrbank.attendance.repository.AttendanceRepository;
 import com.codeit.hrbank.employee.entity.Employee;
 import com.codeit.hrbank.employee.repository.EmployeeRepository;
 import java.time.LocalDate;
@@ -21,7 +21,7 @@ public class AttendanceService {
   private final EmployeeRepository employeeRepository;
 
   @Transactional(readOnly = true)
-  public List<AttendanceDto> findAttendences(LocalDate startDate, LocalDate endDate) {
+  public List<AttendanceDto> findAttendances(LocalDate startDate, LocalDate endDate) {
     if (startDate.isAfter(endDate)) {
       throw new IllegalArgumentException("시작일은 종료일보다 늦을 수 없습니다.");
     }
@@ -32,7 +32,7 @@ public class AttendanceService {
   }
 
   @Transactional
-  public AttendanceDto createAttendence(CreateAttendanceRequest request) {
+  public AttendanceDto createAttendance(CreateAttendanceRequest request) {
     Employee employee = findEmployee(request.employeeId());
     validateDuplicate(null, request);
 
@@ -42,7 +42,7 @@ public class AttendanceService {
   }
 
   @Transactional
-  public AttendanceDto updateAttendence(Long id, CreateAttendanceRequest request) {
+  public AttendanceDto updateAttendance(Long id, CreateAttendanceRequest request) {
     Attendance attendance = attendanceRepository.findById(id)
         .orElseThrow(() -> new NoSuchElementException("근태 내역을 찾을 수 없습니다: " + id));
     Employee employee = findEmployee(request.employeeId());
@@ -59,7 +59,7 @@ public class AttendanceService {
   }
 
   @Transactional
-  public void deleteAttendence(Long id) {
+  public void deleteAttendance(Long id) {
     Attendance attendance = attendanceRepository.findById(id)
         .orElseThrow(() -> new NoSuchElementException("근태 내역을 찾을 수 없습니다: " + id));
     attendanceRepository.delete(attendance);

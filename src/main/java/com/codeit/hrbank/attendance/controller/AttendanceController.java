@@ -1,8 +1,8 @@
-package com.codeit.hrbank.attendence.controller;
+package com.codeit.hrbank.attendance.controller;
 
-import com.codeit.hrbank.attendence.dto.request.CreateAttendanceRequest;
-import com.codeit.hrbank.attendence.dto.response.AttendanceDto;
-import com.codeit.hrbank.attendence.service.AttendanceService;
+import com.codeit.hrbank.attendance.dto.request.CreateAttendanceRequest;
+import com.codeit.hrbank.attendance.dto.response.AttendanceDto;
+import com.codeit.hrbank.attendance.service.AttendanceService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -42,13 +42,13 @@ public class AttendanceController {
           content = @Content(array = @ArraySchema(schema = @Schema(implementation = AttendanceDto.class)))),
       @ApiResponse(responseCode = "400", description = "잘못된 날짜 형식 또는 조회 기간", content = @Content)
   })
-  public ResponseEntity<List<AttendanceDto>> findAttendences(
+  public ResponseEntity<List<AttendanceDto>> findAttendances(
       @Parameter(description = "조회 시작일", required = true)
       @RequestParam LocalDate startDate,
       @Parameter(description = "조회 종료일", required = true)
       @RequestParam LocalDate endDate
   ) {
-    return ResponseEntity.ok(attendanceService.findAttendences(startDate, endDate));
+    return ResponseEntity.ok(attendanceService.findAttendances(startDate, endDate));
   }
 
   @PostMapping
@@ -59,10 +59,10 @@ public class AttendanceController {
       @ApiResponse(responseCode = "404", description = "직원을 찾을 수 없음", content = @Content),
       @ApiResponse(responseCode = "409", description = "중복된 출결 기록", content = @Content)
   })
-  public ResponseEntity<AttendanceDto> createAttendence(
+  public ResponseEntity<AttendanceDto> createAttendance(
       @Valid @RequestBody CreateAttendanceRequest request
   ) {
-    AttendanceDto created = attendanceService.createAttendence(request);
+    AttendanceDto created = attendanceService.createAttendance(request);
     return ResponseEntity.status(HttpStatus.CREATED).body(created);
   }
 
@@ -74,11 +74,11 @@ public class AttendanceController {
       @ApiResponse(responseCode = "404", description = "출결 기록 또는 직원을 찾을 수 없음", content = @Content),
       @ApiResponse(responseCode = "409", description = "중복된 출결 기록", content = @Content)
   })
-  public ResponseEntity<AttendanceDto> updateAttendence(
+  public ResponseEntity<AttendanceDto> updateAttendance(
       @Parameter(description = "출결 ID", required = true) @PathVariable Long id,
       @Valid @RequestBody CreateAttendanceRequest request
   ) {
-    return ResponseEntity.ok(attendanceService.updateAttendence(id, request));
+    return ResponseEntity.ok(attendanceService.updateAttendance(id, request));
   }
 
   @DeleteMapping("/{id}")
@@ -87,9 +87,9 @@ public class AttendanceController {
       @ApiResponse(responseCode = "204", description = "삭제 성공"),
       @ApiResponse(responseCode = "404", description = "출결 기록을 찾을 수 없음", content = @Content)
   })
-  public ResponseEntity<Void> deleteAttendence(
+  public ResponseEntity<Void> deleteAttendance(
       @Parameter(description = "출결 ID", required = true) @PathVariable Long id) {
-    attendanceService.deleteAttendence(id);
+    attendanceService.deleteAttendance(id);
     return ResponseEntity.noContent().build();
   }
 }

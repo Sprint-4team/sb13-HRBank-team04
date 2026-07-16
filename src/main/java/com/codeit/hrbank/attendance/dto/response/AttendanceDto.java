@@ -1,7 +1,7 @@
-package com.codeit.hrbank.attendence.dto.response;
+package com.codeit.hrbank.attendance.dto.response;
 
-import com.codeit.hrbank.attendence.entity.Attendance;
-import com.codeit.hrbank.attendence.enums.AttendanceType;
+import com.codeit.hrbank.attendance.entity.Attendance;
+import com.codeit.hrbank.attendance.enums.AttendanceType;
 import java.time.LocalDate;
 
 public record AttendanceDto(

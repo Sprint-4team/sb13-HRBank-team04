@@ -1,7 +1,7 @@
-package com.codeit.hrbank.attendence.repository;
+package com.codeit.hrbank.attendance.repository;
 
-import com.codeit.hrbank.attendence.entity.Attendance;
-import com.codeit.hrbank.attendence.enums.AttendanceType;
+import com.codeit.hrbank.attendance.entity.Attendance;
+import com.codeit.hrbank.attendance.enums.AttendanceType;
 import java.time.LocalDate;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;

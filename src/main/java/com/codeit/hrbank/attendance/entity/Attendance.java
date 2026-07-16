@@ -1,6 +1,6 @@
-package com.codeit.hrbank.attendence.entity;
+package com.codeit.hrbank.attendance.entity;
 
-import com.codeit.hrbank.attendence.enums.AttendanceType;
+import com.codeit.hrbank.attendance.enums.AttendanceType;
 import com.codeit.hrbank.employee.entity.Employee;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
