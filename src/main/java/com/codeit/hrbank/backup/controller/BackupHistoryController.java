@@ -7,6 +7,7 @@ import com.codeit.hrbank.backup.service.BackupHistoryService;
 import com.codeit.hrbank.backup.type.BackupStatus;
 import com.codeit.hrbank.common.ErrorResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -55,6 +56,18 @@ public class BackupHistoryController {
 
     // 데이터 백업 목록 조회
     @GetMapping
+    @Operation(summary = "백업 이력 목록 조회", description = "검색 조건에 맞는 백업 이력을 커서 기반으로 조회합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "조회 성공", content = @Content(
+                    schema = @Schema(implementation = CursorPageResponseBackupDto.class)
+            )),
+            @ApiResponse(responseCode = "400", description = "잘못된 요청 또는 지원하지 않는 정렬 필드", content = @Content(
+                    schema = @Schema(implementation = ErrorResponse.class)
+            )),
+            @ApiResponse(responseCode = "500", description = "서버 오류", content = @Content(
+                    schema = @Schema(implementation = ErrorResponse.class)
+            ))
+    })
     public ResponseEntity<CursorPageResponseBackupDto> findBackupHistories(
             @ModelAttribute BackupSearchCondition condition) {
         return ResponseEntity.status(HttpStatus.OK)
@@ -63,7 +76,20 @@ public class BackupHistoryController {
 
     // 마지막 백업 조회
     @GetMapping("/latest")
+    @Operation(summary = "최근 백업 이력 조회", description = "지정한 상태의 가장 최근 백업 이력을 조회합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "조회 성공", content = @Content(
+                    schema = @Schema(implementation = BackupDto.class)
+            )),
+            @ApiResponse(responseCode = "400", description = "잘못된 요청 또는 유효하지 않은 백업 상태", content = @Content(
+                    schema = @Schema(implementation = ErrorResponse.class)
+            )),
+            @ApiResponse(responseCode = "500", description = "서버 오류", content = @Content(
+                    schema = @Schema(implementation = ErrorResponse.class)
+            ))
+    })
     public ResponseEntity<BackupDto> findLatestBackupHistory(
+            @Parameter(description = "백업 상태")
             @RequestParam(name = "status", defaultValue = "COMPLETED") BackupStatus status) {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(backupHistoryService.findLatestBackupHistory(status));

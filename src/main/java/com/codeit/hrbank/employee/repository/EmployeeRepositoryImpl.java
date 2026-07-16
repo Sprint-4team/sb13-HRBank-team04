@@ -130,20 +130,6 @@ public class EmployeeRepositoryImpl implements EmployeeRepositoryCustom {
 
   }
 
-  @Override
-  public long countHiredBefore(LocalDate asOfDate) {
-    QEmployee employee = QEmployee.employee;
-
-    Long count = queryFactory
-        .select(employee.count())
-        .from(employee)
-        .where(employee.hireDate.loe(asOfDate),
-            employee.status.ne(EmployeeStatus.RESIGNED))
-        .fetchOne();
-
-    return count != null ? count : 0L;
-  }
-
   private BooleanBuilder baseFilters(EmployeeSearchCondition condition,
       QEmployee employee, QDepartment department) {
     BooleanBuilder builder = new BooleanBuilder();

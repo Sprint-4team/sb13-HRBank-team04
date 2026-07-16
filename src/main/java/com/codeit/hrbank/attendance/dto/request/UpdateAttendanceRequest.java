@@ -1,12 +1,11 @@
-package com.codeit.hrbank.attendence.dto.request;
+package com.codeit.hrbank.attendance.dto.request;
 
-import com.codeit.hrbank.attendence.enums.AttendanceType;
+import com.codeit.hrbank.attendance.enums.AttendanceType;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import java.time.Instant;
 import java.time.LocalDate;
 
-public record CreateAttendenceRequest(
+public record UpdateAttendanceRequest(
     @NotNull Long employeeId,
     @NotNull LocalDate date,
     @NotNull AttendanceType type,
