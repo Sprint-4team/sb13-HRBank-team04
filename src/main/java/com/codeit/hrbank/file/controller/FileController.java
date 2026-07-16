@@ -52,17 +52,17 @@ public class FileController {
     // findFile - downloadFile 의 findFile 반복되는 쿼리는 dto를 반환해 해결한다
     String encodedFileName = UriUtils.encode(file.originalFileName(), StandardCharsets.UTF_8);
     // 인코딩, 한글 깨짐 방지
-    String originalFileName = file.originalFileName();
 
     return ResponseEntity
         .status(HttpStatus.OK)
         .header(
             HttpHeaders.CONTENT_DISPOSITION,
-            "attachment; filename= \""
-                +originalFileName
-                + "; filename*=UTF-8''" + encodedFileName
+            "attachment; filename=\""
+                + encodedFileName // 순수 한글 파일명 문제가 발생해 원본 파일명을 그대로 받지 않고 인코딩된 파일명을 받아 해결
+                + "\"; filename*=UTF-8''" + encodedFileName
         ) // 최신 브라우저는 "filename*=" 인식, 구형 브라우저는 이를 인식 못 할 수도 있기 때문에 "filename=\" 추가
         .contentType(MediaType.parseMediaType(file.contentType()))
         .body(file.resource());
   }
+
 }
