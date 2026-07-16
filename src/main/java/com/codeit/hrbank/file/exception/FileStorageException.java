@@ -1,19 +1,15 @@
 package com.codeit.hrbank.file.exception;
 
 import com.codeit.hrbank.common.BusinessException;
-import java.nio.file.Path;
 import org.springframework.http.HttpStatus;
 
 public class FileStorageException extends BusinessException {
-  // 파일 작업 관련 시스템 오류(500)
-  public FileStorageException(Long id) {
-    super(HttpStatus.INTERNAL_SERVER_ERROR, "파일 경로가 유효하지 않습니다.: "+id);
+  /*
+    파일 작업 관련 시스템 오류(500)
+    예외 클래스 단순화: 하나의 예외가 아니기 때문에 매개변수 타입으로 구분하지 않고,
+    각각 예외가 발생하는 곳에서 다른 메시지를 전달하도록 한다
+   */
+  public FileStorageException(String message) {
+    super(HttpStatus.INTERNAL_SERVER_ERROR, message);
   }
-  public FileStorageException(Path path){
-    super(HttpStatus.INTERNAL_SERVER_ERROR, "저장 경로가 업로드 디렉터리 외부입니다.: "+path);
-  }
-  public FileStorageException(String originalFileName){
-    super(HttpStatus.INTERNAL_SERVER_ERROR, "파일을 저장하는 데 실패하였습니다.: "+originalFileName);
-  }
-
 }
